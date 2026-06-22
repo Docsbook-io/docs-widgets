@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ask User</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: transparent;
+      color: #111;
+      padding: 2px;
+    }
+    @media (prefers-color-scheme: dark) {
+      body { color: #ededed; }
+      .card { background: #0f0f0f; border-color: #1e1e1e; }
+      .card-header { border-color: #1e1e1e; }
+      .status-dot { background: #f59e0b; }
+      .question-text { color: #ededed; }
+      .option-row { border-color: #1e1e1e; }
+      .option-row:hover { background: #1a1a1a; }
+      .option-row.selected { background: #1a1a1a; }
+      .option-label { color: #ededed; }
+      .option-desc { color: #6b7280; }
+      .kbd-hint { background: #1a1a1a; border-color: #2a2a2a; color: #6b7280; }
+      .indicator { border-color: #4b4b4b; }
+      .indicator.on { background: #6366f1; border-color: #6366f1; }
+      .other-input { background: #1a1a1a; border-color: #2a2a2a; color: #ededed; }
+      .other-input::placeholder { color: #555; }
+      .card-footer { border-color: #1e1e1e; }
+      .skip-btn { color: #555; }
+      .skip-btn:hover { background: #1a1a1a; color: #ededed; }
+      .submit-btn { background: #6366f1; }
+      .submit-btn:disabled { background: #2a2a2a; color: #555; }
+      /* toggle */
+      .toggle-track { background: #2a2a2a; }
+      .toggle-track.on { background: #6366f1; }
+      /* text */
+      .text-input { background: #1a1a1a; border-color: #2a2a2a; color: #ededed; }
+      .apply-btn { background: #6366f1; }
+      /* toggle_with_text */
+      .row { border-color: #1e1e1e; }
+    }
+    .card {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #fff;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f59e0b;
+      flex-shrink: 0;
+    }
+    .question-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .close-btn {
+      width: 24px;
+      height: 24px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      border-radius: 6px;
+      color: #9ca3af;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.1s, color 0.1s;
+    }
+    .close-btn:hover { background: #f3f4f6; color: #374151; }
+
+    /* Options list (choice / confirm) */
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 8px;
+    }
+    .option-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background 0.1s;
+    }
+    .option-row:hover { background: #f9fafb; }
+    .option-row.selected { background: #f3f4f6; }
+    .indicator {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 1.5px solid #d1d5db;
+      flex-shrink: 0;
+      margin-top: 1px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.1s, background 0.1s;
+    }
+    .indicator.checkbox { border-radius: 4px; }
+    .indicator.on {
+      background: #6366f1;
+      border-color: #6366f1;
+    }
+    .indicator.on .dot { display: block; }
+    .dot {
+      display: none;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #fff;
+    }
+    .checkmark {
+      display: none;
+      width: 10px;
+      height: 10px;
+    }
+    .indicator.on .checkmark { display: block; }
+    .option-content { flex: 1; min-width: 0; }
+    .option-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: #111;
+      line-height: 1.3;
+    }
+    .option-desc {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 2px;
+      line-height: 1.3;
+    }
+    .kbd-hint {
+      flex-shrink: 0;
+      font-size: 10px;
+      font-weight: 500;
+      color: #9ca3af;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      background: #f9fafb;
+      padding: 2px 6px;
+      margin-top: 2px;
+      font-family: monospace;
+    }
+    .other-input {
+      margin: 0 8px 8px;
+      width: calc(100% - 16px);
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      color: #111;
+      background: #f9fafb;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .other-input:focus { border-color: #6366f1; }
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 10px 12px;
+      border-top: 1px solid #f3f4f6;
+    }
+    .skip-btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: none;
+      background: none;
+      font-size: 12px;
+      font-weight: 500;
+      color: #9ca3af;
+      cursor: pointer;
+      transition: background 0.1s, color 0.1s;
+    }
+    .skip-btn:hover { background: #f3f4f6; color: #374151; }
+    .submit-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: none;
+      background: #6366f1;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.1s;
+    }
+    .submit-btn:disabled {
+      background: #e5e7eb;
+      color: #9ca3af;
+      cursor: not-allowed;
+    }
+    .submit-btn:not(:disabled):hover { opacity: 0.9; }
+    .kbd-enter {
+      font-size: 10px;
+      opacity: 0.7;
+    }
+
+    /* Toggle kind */
+    .toggle-widget {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 16px;
+    }
+    .toggle-label {
+      font-size: 13px;
+      color: #374151;
+    }
+    .toggle-track {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      border-radius: 10px;
+      background: #d1d5db;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .toggle-track.on { background: #6366f1; }
+    .toggle-thumb {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.2s;
+    }
+    .toggle-track.on .toggle-thumb { transform: translateX(16px); }
+
+    /* Text kind */
+    .text-widget {
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .text-label {
+      font-size: 13px;
+      color: #374151;
+      font-weight: 500;
+    }
+    .text-row {
+      display: flex;
+      gap: 8px;
+    }
+    .text-input {
+      flex: 1;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 13px;
+      color: #111;
+      background: #f9fafb;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .text-input:focus { border-color: #6366f1; }
+    .apply-btn {
+      padding: 7px 14px;
+      border-radius: 8px;
+      border: none;
+      background: #6366f1;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .apply-btn:hover { opacity: 0.9; }
+
+    /* toggle_with_text kind */
+    .twt-widget {
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .twt-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+<div class="card" id="card"></div>
+
+<script>
+  const OTHER = "__other__"
+
+  // Synthetic "other" pattern (matches AskPanel)
+  const SYNTHETIC_OTHER_RE = /^(other\b|something else|custom\b|type your own|enter your own|i'?ll type|write my own|none of (the|these)|введите свой|свой ответ|друго(е|й)|свой вариант|напишу сам|укажите свой|ввести вручную)/i
+
+  function isSyntheticOther(opt) {
+    return SYNTHETIC_OTHER_RE.test(String(opt.label).trim()) || SYNTHETIC_OTHER_RE.test(String(opt.value).trim())
+  }
+
+  // State
+  let seed = null
+  let selected = null       // single-select key (or null)
+  let checked = new Set()   // multi-select keys
+  let otherText = ""
+
+  function postAnswer(answer) {
+    window.parent.postMessage({ type: "ui/answer", answer: String(answer) }, "*")
+  }
+
+  function buildAnswer() {
+    if (!seed) return null
+    const multi = seed.multiSelect === true
+    const rawOpts = seed.options || []
+    const options = rawOpts.filter(o => !isSyntheticOther(o))
+    const allowOther = seed.allowOther === true || rawOpts.some(isSyntheticOther)
+    if (multi) {
+      const parts = []
+      for (const opt of options) {
+        if (checked.has(String(opt.value))) parts.push(String(opt.value))
+      }
+      if (allowOther && checked.has(OTHER) && otherText.trim()) parts.push(otherText.trim())
+      return parts.length ? parts.join(", ") : null
+    }
+    if (selected === OTHER) return otherText.trim() || null
+    return selected
+  }
+
+  // ── Renderers for each kind ───────────────────────────────────────────────
+
+  function renderChoice(s) {
+    const rawOpts = s.options || []
+    const options = rawOpts.filter(o => !isSyntheticOther(o))
+    const hasSynthOther = rawOpts.some(isSyntheticOther)
+    const allowOther = s.allowOther === true || hasSynthOther
+    const multi = s.multiSelect === true
+
+    function isOn(key) { return multi ? checked.has(key) : selected === key }
+    function isOtherActive() { return multi ? checked.has(OTHER) : selected === OTHER }
+
+    function rerender() {
+      const ans = buildAnswer()
+      const canSubmit = ans !== null
+
+      const submitDisabled = canSubmit ? "" : "disabled"
+      const optionsHtml = options.map((opt, i) => {
+        const key = String(opt.value)
+        const on = isOn(key)
+        const indicatorClass = multi ? "indicator checkbox" : "indicator"
+        const indicatorInner = on
+          ? (multi
+            ? '<svg class="checkmark" viewBox="0 0 10 10" fill="none" stroke="#fff" stroke-width="2"><polyline points="1,5 4,8 9,2"/></svg>'
+            : '<span class="dot"></span>')
+          : ""
+        return `
+          <button type="button" class="option-row${on ? " selected" : ""}" data-key="${key}" aria-pressed="${on}">
+            <span class="${indicatorClass}${on ? " on" : ""}">${indicatorInner}</span>
+            <span class="option-content">
+              <span class="option-label">${escHtml(opt.label)}</span>
+              ${opt.description ? `<span class="option-desc">${escHtml(opt.description)}</span>` : ""}
+            </span>
+            <kbd class="kbd-hint">${i + 1}</kbd>
+          </button>
+        `
+      }).join("")
+
+      const otherHtml = allowOther ? `
+        <button type="button" class="option-row${isOtherActive() ? " selected" : ""}" data-key="${OTHER}" aria-pressed="${isOtherActive()}">
+          <span class="${multi ? "indicator checkbox" : "indicator"}${isOtherActive() ? " on" : ""}">
+            ${isOtherActive() ? (multi ? '<svg class="checkmark" viewBox="0 0 10 10" fill="none" stroke="#fff" stroke-width="2"><polyline points="1,5 4,8 9,2"/></svg>' : '<span class="dot"></span>') : ""}
+          </span>
+          <span class="option-content"><span class="option-label">Other</span></span>
+          <kbd class="kbd-hint">${options.length + 1}</kbd>
+        </button>
+        ${isOtherActive() ? `<input class="other-input" id="other-input" type="text" placeholder="Type your own answer here" value="${escHtml(otherText)}" />` : ""}
+      ` : ""
+
+      document.getElementById("card").innerHTML = `
+        <div class="card-header">
+          <div class="header-left">
+            <span class="status-dot"></span>
+            <span class="question-text" title="${escHtml(s.label)}">${escHtml(s.label)}</span>
+          </div>
+          <button class="close-btn" id="close-btn" aria-label="Skip" title="Skip">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <line x1="2" y1="2" x2="12" y2="12"/><line x1="12" y1="2" x2="2" y2="12"/>
+            </svg>
+          </button>
+        </div>
+        <div class="options-list">
+          ${optionsHtml}
+          ${otherHtml}
+        </div>
+        <div class="card-footer">
+          <button class="skip-btn" id="skip-btn">Skip</button>
+          <button class="submit-btn" id="submit-btn" ${submitDisabled}>
+            Submit <span class="kbd-enter">⏎</span>
+          </button>
+        </div>
+      `
+
+      // Wire up events
+      document.getElementById("close-btn").addEventListener("click", () => skip())
+      document.getElementById("skip-btn").addEventListener("click", () => skip())
+      document.getElementById("submit-btn").addEventListener("click", () => submit())
+
+      document.querySelectorAll(".option-row").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const key = btn.dataset.key
+          if (multi) {
+            if (checked.has(key)) checked.delete(key)
+            else checked.add(key)
+          } else {
+            selected = key
+            // Single-select non-Other: submit immediately (matching React behavior)
+            if (key !== OTHER) { submit(); return }
+          }
+          rerender()
+        })
+      })
+
+      const otherInput = document.getElementById("other-input")
+      if (otherInput) {
+        otherInput.addEventListener("input", (e) => { otherText = e.target.value; rerender() })
+        otherInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); submit() }
+        })
+      }
+    }
+
+    rerender()
+
+    // Keyboard: number keys, Enter, Escape
+    document.addEventListener("keydown", handleKeydown)
+  }
+
+  function renderToggle(s) {
+    let enabled = !!s.currentValue
+    function rerender() {
+      document.getElementById("card").innerHTML = `
+        <div class="card-header">
+          <div class="header-left">
+            <span class="status-dot"></span>
+            <span class="question-text">${escHtml(s.label)}</span>
+          </div>
+        </div>
+        <div class="toggle-widget">
+          <span class="toggle-label">${escHtml(s.label)}</span>
+          <button class="toggle-track${enabled ? " on" : ""}" id="toggle-btn" aria-pressed="${enabled}">
+            <span class="toggle-thumb"></span>
+          </button>
+        </div>
+      `
+      document.getElementById("toggle-btn").addEventListener("click", () => {
+        enabled = !enabled
+        window.parent.postMessage({ type: "ui/patch", patch: { [s.field]: enabled } }, "*")
+        rerender()
+      })
+    }
+    rerender()
+  }
+
+  function renderText(s) {
+    let textVal = String(s.currentValue || "")
+    function rerender() {
+      document.getElementById("card").innerHTML = `
+        <div class="card-header">
+          <div class="header-left">
+            <span class="status-dot"></span>
+            <span class="question-text">${escHtml(s.label)}</span>
+          </div>
+        </div>
+        <div class="text-widget">
+          <label class="text-label">${escHtml(s.label)}</label>
+          <div class="text-row">
+            <input class="text-input" id="text-input" type="text" value="${escHtml(textVal)}" />
+            <button class="apply-btn" id="apply-btn">Apply</button>
+          </div>
+        </div>
+      `
+      const input = document.getElementById("text-input")
+      input.addEventListener("input", (e) => { textVal = e.target.value })
+      document.getElementById("apply-btn").addEventListener("click", () => {
+        window.parent.postMessage({ type: "ui/patch", patch: { [s.field]: textVal } }, "*")
+      })
+    }
+    rerender()
+  }
+
+  function renderToggleWithText(s) {
+    const raw = s.currentValue
+    let enabled = typeof raw === "boolean" ? raw : (raw && raw.enabled) || false
+    let textVal = (typeof raw === "object" && raw && raw.text) ? raw.text : ""
+
+    function rerender() {
+      document.getElementById("card").innerHTML = `
+        <div class="card-header">
+          <div class="header-left">
+            <span class="status-dot"></span>
+            <span class="question-text">${escHtml(s.label)}</span>
+          </div>
+        </div>
+        <div class="twt-widget">
+          <div class="twt-row">
+            <span class="toggle-label">${escHtml(s.label)}</span>
+            <button class="toggle-track${enabled ? " on" : ""}" id="toggle-btn" aria-pressed="${enabled}">
+              <span class="toggle-thumb"></span>
+            </button>
+          </div>
+          ${enabled ? `
+            <div class="text-row">
+              <input class="text-input" id="text-input" type="text" value="${escHtml(textVal)}" />
+              <button class="apply-btn" id="apply-btn">Apply</button>
+            </div>
+          ` : ""}
+        </div>
+      `
+      document.getElementById("toggle-btn").addEventListener("click", () => {
+        enabled = !enabled
+        window.parent.postMessage({ type: "ui/patch", patch: { [s.field]: { enabled, text: textVal } } }, "*")
+        rerender()
+      })
+      const input = document.getElementById("text-input")
+      if (input) {
+        input.addEventListener("input", (e) => { textVal = e.target.value })
+        const applyBtn = document.getElementById("apply-btn")
+        if (applyBtn) applyBtn.addEventListener("click", () => {
+          window.parent.postMessage({ type: "ui/patch", patch: { [s.field]: { enabled, text: textVal } } }, "*")
+        })
+      }
+    }
+    rerender()
+  }
+
+  function escHtml(str) {
+    return String(str || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+  }
+
+  function skip() {
+    window.parent.postMessage({ type: "ui/answer", answer: "" }, "*")
+  }
+
+  function submit() {
+    const ans = buildAnswer()
+    if (ans !== null) postAnswer(ans)
+  }
+
+  function handleKeydown(e) {
+    if (!seed) return
+    const rawOpts = seed.options || []
+    const options = rawOpts.filter(o => !isSyntheticOther(o))
+    const allowOther = seed.allowOther === true || rawOpts.some(isSyntheticOther)
+    const multi = seed.multiSelect === true
+
+    const typing = document.activeElement && (
+      document.activeElement.id === "other-input" ||
+      document.activeElement.tagName === "INPUT"
+    )
+
+    if (e.key === "Enter") {
+      if (typing || buildAnswer() !== null) {
+        e.preventDefault()
+        submit()
+      }
+      return
+    }
+    if (e.key === "Escape") {
+      e.preventDefault()
+      skip()
+      return
+    }
+    if (typing) return
+    const n = parseInt(e.key, 10)
+    if (!isNaN(n) && n >= 1) {
+      const rowCount = options.length + (allowOther ? 1 : 0)
+      if (n <= rowCount) {
+        e.preventDefault()
+        const key = n <= options.length ? String(options[n - 1].value) : OTHER
+        if (multi) {
+          if (checked.has(key)) checked.delete(key)
+          else checked.add(key)
+        } else {
+          selected = key
+          if (key !== OTHER) { submit(); return }
+        }
+        // Re-render choice UI
+        renderChoice(seed)
+      }
+    }
+  }
+
+  // Main render dispatcher
+  function render(s) {
+    seed = s
+    selected = null
+    checked = new Set()
+    otherText = ""
+    document.removeEventListener("keydown", handleKeydown)
+
+    const kind = s.kind || "choice"
+    if (kind === "choice" || kind === "confirm") {
+      renderChoice(s)
+    } else if (kind === "toggle") {
+      renderToggle(s)
+    } else if (kind === "text") {
+      renderText(s)
+    } else if (kind === "toggle_with_text") {
+      renderToggleWithText(s)
+    } else {
+      // Unknown kind — show label + close
+      document.getElementById("card").innerHTML = `
+        <div class="card-header">
+          <div class="header-left">
+            <span class="status-dot"></span>
+            <span class="question-text">${escHtml(s.label)}</span>
+          </div>
+          <button class="close-btn" id="close-btn">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <line x1="2" y1="2" x2="12" y2="12"/><line x1="12" y1="2" x2="2" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      `
+      document.getElementById("close-btn").addEventListener("click", skip)
+    }
+  }
+
+  // Show placeholder until seed arrives
+  document.getElementById("card").innerHTML = `
+    <div class="card-header">
+      <div class="header-left">
+        <span class="status-dot"></span>
+        <span class="question-text">Loading…</span>
+      </div>
+    </div>
+  `
+
+  // Listen for postMessage from host
+  window.addEventListener("message", (event) => {
+    const msg = event.data
+    if (!msg || typeof msg.type !== "string") return
+    if (msg.type === "ui/initialize" && msg.seed) {
+      render(msg.seed)
+    }
+  })
+
+  // Signal ready to host
+  window.parent.postMessage({ type: "ui/ready" }, "*")
+</script>
+</body>
+</html>

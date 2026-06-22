@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upgrade Card</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: transparent;
+      color: #111;
+    }
+    @media (prefers-color-scheme: dark) {
+      body { color: #ededed; }
+      .card { background: #111; border-color: #2a2a2a; }
+      .card-header { border-color: #1e1e1e; }
+      .plan-label { color: #555; }
+      .headline { color: #ededed; }
+      .subline { color: #888; }
+      .benefit-icon { background: #1e1e1e; color: #666; }
+      .benefit-title { color: #ededed; }
+      .benefit-desc { color: #888; }
+      .cta-pro { border-color: #2a2a2a; background: #161616; color: #ededed; }
+      .cta-pro:hover { border-color: #444; }
+      .cta-pro-plus { background: #ededed; color: #111; }
+      .cta-pro-plus:hover { background: #fff; }
+      .cta-label { color: #555; }
+      .dismiss-btn { color: #555; }
+      .dismiss-btn:hover { color: #aaa; }
+    }
+    .card {
+      max-width: 360px;
+      margin: 8px auto;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #fff;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .card-header {
+      padding: 16px 16px 12px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .plan-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #9ca3af;
+      margin-bottom: 2px;
+    }
+    .headline {
+      font-size: 14px;
+      font-weight: 700;
+      color: #111;
+      line-height: 1.3;
+    }
+    .subline {
+      margin-top: 4px;
+      font-size: 12px;
+      color: #6b7280;
+      line-height: 1.4;
+    }
+    .benefits {
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .benefit {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .benefit-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      background: #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: #6b7280;
+    }
+    .benefit-icon svg { width: 14px; height: 14px; }
+    .benefit-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #1f2937;
+      line-height: 1.2;
+    }
+    .benefit-desc {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 2px;
+      line-height: 1.3;
+    }
+    .cta-area {
+      padding: 4px 16px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .cta-btn {
+      width: 100%;
+      border-radius: 8px;
+      padding: 10px 16px;
+      text-align: left;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.15s;
+      display: block;
+      text-decoration: none;
+    }
+    .cta-btn:hover { opacity: 0.85; }
+    .cta-pro {
+      border: 1px solid #e5e7eb;
+      background: #fff;
+      color: #111;
+    }
+    .cta-pro-plus {
+      background: #111;
+      color: #fff;
+    }
+    .cta-label {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+      opacity: 0.5;
+    }
+    .cta-price {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .dismiss-btn {
+      width: 100%;
+      text-align: center;
+      font-size: 12px;
+      color: #9ca3af;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px 0;
+      transition: color 0.15s;
+    }
+    .dismiss-btn:hover { color: #4b5563; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="card-header">
+    <p class="plan-label" id="plan-label"></p>
+    <h3 class="headline" id="headline"></h3>
+    <p class="subline" id="subline"></p>
+  </div>
+  <div class="benefits" id="benefits"></div>
+  <div class="cta-area">
+    <a id="cta-btn" class="cta-btn" href="#" target="_blank" rel="noopener noreferrer">
+      <span class="cta-label" id="cta-label"></span>
+      <span class="cta-price" id="cta-price"></span>
+    </a>
+    <button class="dismiss-btn" id="dismiss-btn">Maybe later</button>
+  </div>
+</div>
+
+<script>
+  const PRO_BENEFITS = [
+    {
+      svg: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l2.5 2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      title: "Custom domain",
+      desc: "docs.yourcompany.com with free SSL",
+    },
+    {
+      svg: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 5h14M3 10h10M3 15h7" stroke-linecap="round"/></svg>',
+      title: "SEO / GEO / AEO",
+      desc: "Rank in Google, ChatGPT Search, Perplexity",
+    },
+    {
+      svg: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 2a8 8 0 1 1 0 16A8 8 0 0 1 10 2z"/><path d="M7 10l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      title: "AI chat 200/mo",
+      desc: "Deflect support tickets with an AI assistant",
+    },
+    {
+      svg: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="14" height="12" rx="2"/><path d="M3 8h14" stroke-linecap="round"/><path d="M7 12h6" stroke-linecap="round"/></svg>',
+      title: "Translations 50/mo",
+      desc: "AI-translate docs into 15 languages with separate SEO",
+    },
+  ]
+
+  const PRO_PLUS_BENEFITS = [
+    {
+      svg: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="14" height="12" rx="2"/><path d="M3 8h14M8 4v12" stroke-linecap="round"/></svg>',
+      title: "White-label",
+      desc: 'Remove "Powered by Docsbook" badge',
+    },
+    {
+      svg: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 2l2.5 5 5.5.8-4 3.9.9 5.5L10 14.5 5.1 17.2l.9-5.5L2 7.8l5.5-.8z" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      title: "Source of Truth",
+      desc: "Full doc graph + 17 LSP tools for AI agents",
+    },
+    {
+      svg: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 2a8 8 0 1 1 0 16A8 8 0 0 1 10 2z"/><path d="M7 10l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      title: "AI chat 2000/mo",
+      desc: "10× more AI conversations per month",
+    },
+    {
+      svg: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="14" height="12" rx="2"/><path d="M3 8h14" stroke-linecap="round"/><path d="M7 12h6" stroke-linecap="round"/></svg>',
+      title: "Translations 500/mo",
+      desc: "Everything in Pro + much higher limits",
+    },
+  ]
+
+  let seed = null
+
+  function render(s) {
+    seed = s
+    const isPro = s.targetPlan !== "pro_plus"
+    const benefits = isPro ? PRO_BENEFITS : PRO_PLUS_BENEFITS
+    const planLabel = isPro ? "Pro · lifetime" : "Pro+ · monthly"
+    const headline = isPro ? "Upgrade to Pro" : "Upgrade to Pro+"
+    const subline = isPro
+      ? "Custom domain, SEO, AI chat, and translations — one-time payment."
+      : "White-label, Source of Truth, and 10× higher limits — billed monthly."
+    const price = isPro ? "$150 one-time" : "$59/mo"
+
+    document.getElementById("plan-label").textContent = planLabel
+    document.getElementById("headline").textContent = headline
+    document.getElementById("subline").textContent = subline
+    document.getElementById("cta-label").textContent = planLabel
+    document.getElementById("cta-price").textContent = price
+
+    const ctaBtn = document.getElementById("cta-btn")
+    ctaBtn.className = "cta-btn " + (isPro ? "cta-pro" : "cta-pro-plus")
+
+    // Build CTA URL (same as existing ChatUpgradeCard.handleUpgrade)
+    const appUrl = s.appUrl || window.location.origin
+    const params = new URLSearchParams({ checkout: s.targetPlan })
+    if (s.workspaceId) params.set("workspaceId", String(s.workspaceId))
+    ctaBtn.href = `${appUrl}?${params.toString()}`
+
+    const benefitsEl = document.getElementById("benefits")
+    benefitsEl.innerHTML = benefits.map(b => `
+      <div class="benefit">
+        <div class="benefit-icon">${b.svg}</div>
+        <div>
+          <p class="benefit-title">${b.title}</p>
+          <p class="benefit-desc">${b.desc}</p>
+        </div>
+      </div>
+    `).join("")
+  }
+
+  // Default placeholder
+  render({ targetPlan: "pro", workspaceId: null, appUrl: "" })
+
+  document.getElementById("dismiss-btn").addEventListener("click", () => {
+    document.getElementById("card").classList.add("hidden")
+    // Notify host that user dismissed
+    window.parent.postMessage({ type: "ui/patch", patch: { dismissed: true } }, "*")
+  })
+
+  // Listen for postMessage from host
+  window.addEventListener("message", (event) => {
+    const msg = event.data
+    if (!msg || typeof msg.type !== "string") return
+    if (msg.type === "ui/initialize" && msg.seed) {
+      render(msg.seed)
+    }
+  })
+
+  // Signal ready to host
+  window.parent.postMessage({ type: "ui/ready" }, "*")
+</script>
+</body>
+</html>

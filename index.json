@@ -21,7 +21,7 @@
     "built_in": true,
     "author": "Docsbook",
     "repository": "https://github.com/docsbook-io/docs-widgets",
-    "raw_url": "https://raw.githubusercontent.com/docsbook-io/docs-widgets/main/widgets/openapi-renderer/WIDGET.md",
+    "raw_url": "https://raw.githubusercontent.com/docsbook-io/docs-widgets/main/widgets/openapi-renderer/widget.html",
     "widget_url": "https://raw.githubusercontent.com/docsbook-io/docs-widgets/main/widgets/openapi-renderer/widget.html"
   },
   {
@@ -46,5 +46,71 @@
     "repository": "https://github.com/docsbook-io/docs-widgets",
     "raw_url": "https://raw.githubusercontent.com/docsbook-io/docs-widgets/main/widgets/fields-form/WIDGET.md",
     "widget_url": "https://raw.githubusercontent.com/docsbook-io/docs-widgets/main/widgets/fields-form/widget.html"
+  },
+  {
+    "name": "upgrade-card",
+    "description": "Renders an interactive plan upgrade card inline in chat. Shows plan comparison (Pro or Pro+) with benefits and a CTA link to the existing checkout flow.",
+    "version": "1.0.0",
+    "category": "conversion",
+    "modes": ["user", "admin"],
+    "triggers": [
+      "show upgrade card",
+      "upgrade to pro",
+      "upgrade plan",
+      "show pricing"
+    ],
+    "keywords": ["upgrade", "pro", "plan", "billing", "pricing", "cta", "upsell"],
+    "discriminators": ["upgrade", "pro plan", "pro+ plan", "upsell"],
+    "mcp_resource_uri": "ui://upgrade-card/render",
+    "requires_plan": null,
+    "built_in": true,
+    "author": "Docsbook",
+    "repository": "https://github.com/docsbook-io/docsbook",
+    "raw_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/upgrade-card/widget.html",
+    "widget_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/upgrade-card/widget.html"
+  },
+  {
+    "name": "preview-card",
+    "description": "Renders a browser-window-style preview of a documentation site URL inline in chat. Shows the published docs or preview URL, falls back to an open-in-new-tab link if framing is blocked.",
+    "version": "1.0.0",
+    "category": "content",
+    "modes": ["user", "admin"],
+    "triggers": [
+      "show docs preview",
+      "preview site",
+      "show published docs",
+      "view site"
+    ],
+    "keywords": ["preview", "docs", "site", "url", "embed", "iframe"],
+    "discriminators": ["preview", "docs site", "published site"],
+    "mcp_resource_uri": "ui://preview-card/render",
+    "requires_plan": null,
+    "built_in": true,
+    "author": "Docsbook",
+    "repository": "https://github.com/docsbook-io/docsbook",
+    "raw_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/preview-card/widget.html",
+    "widget_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/preview-card/widget.html"
+  },
+  {
+    "name": "ask-user",
+    "description": "Composite interactive question widget rendered inline in chat. Renders the matching control (toggle, text, choice, confirm, toggle_with_text) based on the seed kind, and posts the user's answer back via postMessage so the host can resume the agent loop.",
+    "version": "1.0.0",
+    "category": "interaction",
+    "modes": ["user", "admin"],
+    "triggers": [
+      "ask user question",
+      "interactive question",
+      "pick an option",
+      "confirm action"
+    ],
+    "keywords": ["ask", "question", "choice", "confirm", "toggle", "input", "interactive"],
+    "discriminators": ["ask_user", "ask user", "pick option", "confirm"],
+    "mcp_resource_uri": "ui://ask-user/render",
+    "requires_plan": null,
+    "built_in": true,
+    "author": "Docsbook",
+    "repository": "https://github.com/docsbook-io/docsbook",
+    "raw_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/ask-user/widget.html",
+    "widget_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/ask-user/widget.html"
   }
 ]
