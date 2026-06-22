@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Analytics</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;color:#111;background:#fff;padding:16px}
+  h3{font-size:14px;font-weight:600;margin-bottom:4px}
+  p.desc{font-size:12px;color:#666;margin-bottom:12px}
+  .loading{color:#888;font-size:12px}
+  .error{color:#e53e3e;font-size:12px;padding:8px;background:#fff5f5;border-radius:6px}
+  .metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+  .metric{padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px}
+  .metric .label{font-size:11px;color:#6b7280;font-weight:500}
+  .metric .val{font-size:22px;font-weight:700;color:#111;margin-top:2px}
+  svg.chart{width:100%;height:80px;display:block;margin-bottom:12px}
+  table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px}
+  th{text-align:left;padding:6px 8px;border-bottom:1px solid #e5e7eb;color:#6b7280;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  td{padding:6px 8px;border-bottom:1px solid #f3f4f6;color:#374151;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  td.val{text-align:right;font-weight:600;color:#111;white-space:nowrap}
+  .section-title{font-size:12px;font-weight:600;color:#374151;margin:8px 0 4px}
+  .empty{color:#9ca3af;font-size:12px;padding:8px 0;text-align:center}
+  .periods{display:flex;gap:4px;margin-bottom:12px}
+  .period-btn{padding:2px 8px;border-radius:4px;border:1px solid #e5e7eb;font-size:11px;cursor:pointer;background:#fff;color:#6b7280}
+  .period-btn.active{background:#111;color:#fff;border-color:#111}
+</style>
+</head>
+<body>
+<div id="app"><p class="loading">Loading…</p></div>
+
+<script>
+// ── callTool bridge ──────────────────────────────────────────────────────────
+function callTool(name, args) {
+  return new Promise(function(resolve, reject) {
+    var id = Math.random().toString(36).slice(2) + Date.now();
+    function handler(e) {
+      var d = e.data;
+      if (!d || d.type !== 'ui/toolResult' || d.id !== id) return;
+      window.removeEventListener('message', handler);
+      if (d.ok) resolve(d.result);
+      else reject(new Error(d.error || 'tool error'));
+    }
+    window.addEventListener('message', handler);
+    window.parent.postMessage({ type: 'ui/callTool', id: id, name: name, args: args }, '*');
+  });
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function fmtNum(n) {
+  n = n || 0;
+  if (n >= 1e6) return (n/1e6).toFixed(1).replace(/\.0$/,'') + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1).replace(/\.0$/,'') + 'k';
+  return String(n);
+}
+function fmtDate(iso) {
+  try { return new Date(iso).toLocaleDateString('en-US', {month:'short', day:'numeric'}); }
+  catch(e) { return iso||''; }
+}
+
+var workspaceId = null;
+var days = 7;
+
+function buildChart(series) {
+  if (!series || series.length < 2) return '';
+  var max = Math.max.apply(null, series.map(function(d){return d.count||0;}));
+  if (max < 1) max = 1;
+  var W = 400, H = 70, pl = 0, pt = 4, pr = 0, pb = 16;
+  var iw = W - pl - pr, ih = H - pt - pb;
+  var px = function(i){ return pl + (i / Math.max(series.length-1,1)) * iw; };
+  var py = function(v){ return pt + ih - (v/max)*ih; };
+  var pts = series.map(function(d,i){ return [px(i), py(d.count||0)]; });
+  var linePath = pts.map(function(p,i){ return (i===0?'M':'L') + p[0].toFixed(1)+','+p[1].toFixed(1); }).join(' ');
+  var areaPath = linePath + ' L'+pts[pts.length-1][0]+','+(pt+ih)+' L'+pts[0][0]+','+(pt+ih)+' Z';
+  var first = series[0] ? fmtDate(series[0].date) : '';
+  var last = series[series.length-1] ? fmtDate(series[series.length-1].date) : '';
+  return '<svg class="chart" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'
+    + '<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3b82f6" stop-opacity=".15"/><stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/></linearGradient></defs>'
+    + '<path d="'+areaPath+'" fill="url(#g)"/>'
+    + '<path d="'+linePath+'" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
+    + '<text x="'+pl+'" y="'+H+'" font-size="9" fill="#9ca3af">'+esc(first)+'</text>'
+    + '<text x="'+(W-pr)+'" y="'+H+'" font-size="9" fill="#9ca3af" text-anchor="end">'+esc(last)+'</text>'
+    + '</svg>';
+}
+
+function render(data) {
+  var app = document.getElementById('app');
+  var totals = data.totals || {};
+  var topPages = (data.topPages || []).slice(0, 8);
+  var referrers = (data.referrers || []).slice(0, 8);
+  var visitorSeries = data.visitorSeries || [];
+
+  var metricsHtml = '<div class="metrics">'
+    + '<div class="metric"><div class="label">Visitors</div><div class="val">'+esc(fmtNum(totals.uniqueVisitors||0))+'</div></div>'
+    + '<div class="metric"><div class="label">Page Views</div><div class="val">'+esc(fmtNum(totals.pageviews||0))+'</div></div>'
+    + '</div>';
+
+  var chartHtml = buildChart(visitorSeries);
+
+  var pagesHtml = '';
+  if (topPages.length > 0) {
+    var maxPv = topPages[0].visitors || 1;
+    var trs = topPages.map(function(p){
+      return '<tr><td title="'+esc(p.path)+'">'+esc(p.path||'/')+'</td><td class="val">'+esc(fmtNum(p.visitors||0))+'</td></tr>';
+    }).join('');
+    pagesHtml = '<div class="section-title">Top Pages</div><table><thead><tr><th>Page</th><th style="text-align:right">Visitors</th></tr></thead><tbody>'+trs+'</tbody></table>';
+  } else {
+    pagesHtml = '<div class="section-title">Top Pages</div><div class="empty">No data</div>';
+  }
+
+  var refHtml = '';
+  if (referrers.length > 0) {
+    var trs2 = referrers.map(function(r){
+      return '<tr><td title="'+esc(r.referrer)+'">'+esc(r.referrer||'direct')+'</td><td class="val">'+esc(r.visitors||0)+'</td></tr>';
+    }).join('');
+    refHtml = '<div class="section-title">Referrers</div><table><thead><tr><th>Source</th><th style="text-align:right">Visitors</th></tr></thead><tbody>'+trs2+'</tbody></table>';
+  }
+
+  var periodHtml = '<div class="periods">'
+    + ['1','7','30'].map(function(d){
+      var active = String(days) === d;
+      return '<button class="period-btn'+(active?' active':'')+'" data-days="'+d+'">'+(d==='1'?'24H':d+'D')+'</button>';
+    }).join('')
+    + '</div>';
+
+  app.innerHTML = '<h3>Analytics</h3>' + periodHtml + metricsHtml + chartHtml + pagesHtml + refHtml;
+
+  app.querySelectorAll('.period-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      days = parseInt(btn.getAttribute('data-days')) || 7;
+      load();
+    });
+  });
+}
+
+function load() {
+  if (!workspaceId) return;
+  document.getElementById('app').innerHTML = '<p class="loading">Loading…</p>';
+  callTool('analytics.docs', { workspaceId: workspaceId, days: days })
+    .then(function(data) { render(data); })
+    .catch(function(err) {
+      document.getElementById('app').innerHTML = '<p class="error">Failed to load: ' + esc(err.message) + '</p>';
+    });
+}
+
+window.addEventListener('message', function(e) {
+  var d = e.data;
+  if (!d || d.type !== 'ui/initialize') return;
+  var seed = d.seed || {};
+  workspaceId = seed.workspaceId;
+  var range = seed.range || '7d';
+  days = parseInt(String(range).replace(/[^0-9]/g,'')) || 7;
+  load();
+});
+
+window.parent.postMessage({ type: 'ui/ready' }, '*');
+</script>
+</body>
+</html>

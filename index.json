@@ -42,6 +42,189 @@
     "widget_url": "https://raw.githubusercontent.com/docsbook-io/docs-widgets/main/widgets/openapi-renderer/widget.html"
   },
   {
+    "name": "chats-analysis-card",
+    "description": "Shows AI chat analysis for a workspace — questions readers asked, unanswered questions, and negative feedback, as a table with a daily query bar chart.",
+    "version": "1.0.0",
+    "category": "analytics",
+    "modes": [
+      "admin"
+    ],
+    "triggers": [
+      "show chats analysis",
+      "what are people asking my AI",
+      "show unanswered AI questions",
+      "AI chat analysis",
+      "show AI questions"
+    ],
+    "keywords": [
+      "chats",
+      "analysis",
+      "ai questions",
+      "unanswered",
+      "negative feedback",
+      "analytics"
+    ],
+    "discriminators": [
+      "chats analysis",
+      "unanswered questions",
+      "AI chat log"
+    ],
+    "mcp_resource_uri": "ui://chats-analysis-card/render",
+    "requires_plan": "pro",
+    "built_in": true,
+    "author": "Docsbook",
+    "repository": "https://github.com/docsbook-io/docs-widgets",
+    "raw_url": "https://raw.githubusercontent.com/docsbook-io/docs-widgets/main/widgets/chats-analysis-card/WIDGET.md",
+    "widget_url": "https://raw.githubusercontent.com/docsbook-io/docs-widgets/main/widgets/chats-analysis-card/widget.html"
+  },
+  {
+    "name": "cost-analysis-card",
+    "description": "Shows the AI cost/spend breakdown for a workspace — total estimated monthly cost and per-model breakdown table.",
+    "version": "1.0.0",
+    "category": "analytics",
+    "modes": [
+      "admin"
+    ],
+    "triggers": [
+      "show AI cost breakdown",
+      "how much is the AI costing me",
+      "show AI spend",
+      "AI cost analysis",
+      "billing breakdown"
+    ],
+    "keywords": [
+      "cost",
+      "spend",
+      "ai cost",
+      "billing",
+      "breakdown",
+      "analytics"
+    ],
+    "discriminators": [
+      "cost analysis",
+      "AI spend",
+      "billing breakdown"
+    ],
+    "mcp_resource_uri": "ui://cost-analysis-card/render",
+    "requires_plan": "pro_plus",
+    "built_in": true,
+    "author": "Docsbook",
+    "repository": "https://github.com/docsbook-io/docs-widgets",
+    "raw_url": "https://raw.githubusercontent.com/docsbook-io/docs-widgets/main/widgets/cost-analysis-card/WIDGET.md",
+    "widget_url": "https://raw.githubusercontent.com/docsbook-io/docs-widgets/main/widgets/cost-analysis-card/widget.html"
+  },
+  {
+    "name": "analytics-card",
+    "description": "Shows live docs analytics for a workspace — visitors, page views, top pages and referrers, with an inline SVG line chart.",
+    "version": "1.0.0",
+    "category": "analytics",
+    "modes": [
+      "admin"
+    ],
+    "triggers": [
+      "show my analytics",
+      "how many visitors do I have",
+      "what are my top pages",
+      "show traffic",
+      "page views"
+    ],
+    "keywords": [
+      "analytics",
+      "visitors",
+      "page views",
+      "traffic",
+      "top pages",
+      "referrers"
+    ],
+    "discriminators": [
+      "analytics overview",
+      "visitor count",
+      "page views"
+    ],
+    "mcp_resource_uri": "ui://analytics-card/render",
+    "requires_plan": null,
+    "built_in": true,
+    "author": "Docsbook",
+    "repository": "https://github.com/docsbook-io/docs-widgets",
+    "raw_url": "https://raw.githubusercontent.com/docsbook-io/docs-widgets/main/widgets/analytics-card/WIDGET.md",
+    "widget_url": "https://raw.githubusercontent.com/docsbook-io/docs-widgets/main/widgets/analytics-card/widget.html"
+  },
+  {
+    "name": "ai-usage-card",
+    "description": "Shows AI and translation usage for a workspace — queries used vs monthly limit with a progress bar.",
+    "version": "1.0.0",
+    "category": "analytics",
+    "modes": [
+      "admin"
+    ],
+    "triggers": [
+      "show AI usage",
+      "how many AI requests have I used",
+      "show my AI quota",
+      "how much translation quota is left",
+      "AI limit remaining"
+    ],
+    "keywords": [
+      "ai usage",
+      "usage",
+      "limit",
+      "remaining",
+      "quota",
+      "translation"
+    ],
+    "discriminators": [
+      "AI usage",
+      "monthly limit",
+      "usage quota"
+    ],
+    "mcp_resource_uri": "ui://ai-usage-card/render",
+    "requires_plan": null,
+    "built_in": true,
+    "author": "Docsbook",
+    "repository": "https://github.com/docsbook-io/docs-widgets",
+    "raw_url": "https://raw.githubusercontent.com/docsbook-io/docs-widgets/main/widgets/ai-usage-card/WIDGET.md",
+    "widget_url": "https://raw.githubusercontent.com/docsbook-io/docs-widgets/main/widgets/ai-usage-card/widget.html"
+  },
+  {
+    "name": "engagement-analytics-card",
+    "description": "Shows engagement analytics — popular searches, failed searches, negative feedback pages, and reader page journeys.",
+    "version": "1.0.0",
+    "category": "analytics",
+    "modes": [
+      "admin"
+    ],
+    "triggers": [
+      "show failed searches",
+      "what are people searching for",
+      "show popular searches",
+      "where do readers drop off",
+      "page journeys",
+      "negative feedback pages"
+    ],
+    "keywords": [
+      "searches",
+      "failed searches",
+      "popular searches",
+      "journeys",
+      "feedback",
+      "engagement",
+      "analytics"
+    ],
+    "discriminators": [
+      "failed searches",
+      "popular searches",
+      "page journeys",
+      "engagement analytics"
+    ],
+    "mcp_resource_uri": "ui://engagement-analytics-card/render",
+    "requires_plan": "pro",
+    "built_in": true,
+    "author": "Docsbook",
+    "repository": "https://github.com/docsbook-io/docs-widgets",
+    "raw_url": "https://raw.githubusercontent.com/docsbook-io/docs-widgets/main/widgets/engagement-analytics-card/WIDGET.md",
+    "widget_url": "https://raw.githubusercontent.com/docsbook-io/docs-widgets/main/widgets/engagement-analytics-card/widget.html"
+  },
+  {
     "name": "mcp-install-card",
     "description": "MCP server connection setup — shows install commands and config snippets for Claude Code, Cursor, and other AI clients to connect to this workspace's MCP endpoint.",
     "version": "1.0.0",
