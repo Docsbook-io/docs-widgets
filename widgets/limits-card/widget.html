@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Limits</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #ffffff;
+      --border: #e5e7eb;
+      --text: #111827;
+      --text-muted: #6b7280;
+      --text-light: #9ca3af;
+      --bar-bg: #e5e7eb;
+      --bar-blue: #3b82f6;
+      --bar-violet: #8b5cf6;
+      --bar-emerald: #10b981;
+      --bar-warn: #f59e0b;
+      --bar-danger: #ef4444;
+      --upgrade-bg: rgba(59,130,246,0.06);
+      --upgrade-border: rgba(59,130,246,0.2);
+      --upgrade-text: #1d4ed8;
+      --warn-bg: rgba(245,158,11,0.06);
+      --warn-border: rgba(245,158,11,0.2);
+      --warn-text: #92400e;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0a0a0a;
+        --border: #2a2a2a;
+        --text: #ededed;
+        --text-muted: #888888;
+        --text-light: #555555;
+        --bar-bg: #2a2a2a;
+        --upgrade-bg: rgba(59,130,246,0.1);
+        --upgrade-border: rgba(59,130,246,0.25);
+        --upgrade-text: #93c5fd;
+        --warn-bg: rgba(245,158,11,0.1);
+        --warn-border: rgba(245,158,11,0.25);
+        --warn-text: #fcd34d;
+      }
+    }
+
+    html, body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    #app { padding: 20px; max-width: 600px; display: flex; flex-direction: column; gap: 14px; }
+
+    .plan-label { font-size: 11px; color: var(--text-muted); }
+
+    .credit-total {
+      display: flex; align-items: baseline; gap: 8px;
+    }
+    .credit-total .amount {
+      font-size: 28px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums;
+    }
+    .credit-total .of {
+      font-size: 13px; color: var(--text-muted);
+    }
+
+    .bar-track {
+      width: 100%; height: 8px; border-radius: 9999px;
+      background: var(--bar-bg); display: flex; overflow: hidden;
+    }
+    .bar-seg {
+      height: 100%;
+      transition: width 0.5s ease;
+    }
+    .bar-seg.users { background: var(--bar-blue); }
+    .bar-seg.admin { background: var(--bar-violet); }
+    .bar-seg.trans { background: var(--bar-emerald); }
+
+    .legend { display: flex; flex-direction: column; gap: 8px; }
+    .legend-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .legend-label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .legend-dot.users { background: var(--bar-blue); }
+    .legend-dot.admin { background: var(--bar-violet); }
+    .legend-dot.trans { background: var(--bar-emerald); }
+    .legend-value { font-size: 12px; color: var(--text-light); font-variant-numeric: tabular-nums; }
+
+    .divider { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+    .own-key-notice, .upgrade-cta, .warn-notice {
+      padding: 8px 12px; border-radius: 8px; font-size: 12px;
+    }
+    .upgrade-cta {
+      background: var(--upgrade-bg); border: 1px solid var(--upgrade-border);
+      color: var(--upgrade-text); cursor: pointer; text-align: center;
+      width: 100%; transition: opacity 0.15s;
+    }
+    .upgrade-cta:hover { opacity: 0.8; }
+    .warn-notice {
+      background: var(--warn-bg); border: 1px solid var(--warn-border);
+      color: var(--warn-text);
+    }
+    .own-key-notice {
+      background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.2);
+      color: var(--upgrade-text); font-size: 12px;
+    }
+
+    #loading {
+      display: flex; align-items: center; justify-content: center;
+      height: 120px; color: var(--text-muted); font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="loading">Loading...</div>
+<div id="app" style="display:none"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  function fmtDate(iso) {
+    try {
+      return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } catch (e) { return iso; }
+  }
+
+  function fmt(n) { return (n || 0).toLocaleString(); }
+
+  function render(seed) {
+    var app = document.getElementById('app');
+    app.innerHTML = '';
+
+    var plan = seed.plan || 'free';
+    var remaining = seed.creditsRemaining || 0;
+    var total = seed.creditsTotal || 1;
+    var usedUsers = seed.creditsUsedUsers || 0;
+    var usedAdmin = seed.creditsUsedAdmin || 0;
+    var usedTrans = seed.creditsUsedTranslations || 0;
+    var resetAt = seed.resetAt || null;
+    var ownKey = Boolean(seed.ownKey);
+
+    var pctUsed = total > 0 ? Math.min(((total - remaining) / total) * 100, 100) : 0;
+    var isLow = pctUsed >= 80;
+    var isDepleted = remaining <= 0;
+
+    // Plan label
+    var planLabel = document.createElement('p');
+    planLabel.className = 'plan-label';
+    if (plan === 'pro') {
+      planLabel.textContent = 'Lifetime balance — your credits never expire.';
+    } else if (plan === 'pro_plus') {
+      planLabel.textContent = 'Monthly budget' + (resetAt ? ' — resets ' + fmtDate(resetAt) : '') + '.';
+    } else {
+      planLabel.textContent = 'Free plan — upgrade for a larger token budget.';
+    }
+    app.appendChild(planLabel);
+
+    if (ownKey) {
+      var notice = document.createElement('div');
+      notice.className = 'own-key-notice';
+      notice.textContent = 'You are using your own API key — token usage is not tracked.';
+      app.appendChild(notice);
+      return;
+    }
+
+    // Credit total display
+    var creditTotal = document.createElement('div');
+    creditTotal.className = 'credit-total';
+    var amtSpan = document.createElement('span');
+    amtSpan.className = 'amount';
+    amtSpan.textContent = fmt(total - remaining);
+    var ofSpan = document.createElement('span');
+    ofSpan.className = 'of';
+    ofSpan.textContent = '/ ' + fmt(total) + ' credits used';
+    creditTotal.appendChild(amtSpan);
+    creditTotal.appendChild(ofSpan);
+    app.appendChild(creditTotal);
+
+    // Budget bar
+    var barTrack = document.createElement('div');
+    barTrack.className = 'bar-track';
+
+    var totalUsed = usedUsers + usedAdmin + usedTrans;
+    var segments = [
+      { key: 'users', cls: 'users', value: usedUsers },
+      { key: 'admin', cls: 'admin', value: usedAdmin },
+      { key: 'trans', cls: 'trans', value: usedTrans },
+    ];
+    segments.forEach(function (s) {
+      if (s.value <= 0) return;
+      var seg = document.createElement('div');
+      seg.className = 'bar-seg ' + s.cls;
+      var pct = total > 0 ? Math.min((s.value / total) * 100, 100) : 0;
+      seg.style.width = pct + '%';
+      barTrack.appendChild(seg);
+    });
+    app.appendChild(barTrack);
+
+    // Warn / depleted notice
+    if (isDepleted) {
+      var depletedNote = document.createElement('div');
+      depletedNote.className = 'warn-notice';
+      depletedNote.textContent = 'Token limit reached.' + (plan === 'pro_plus' && resetAt ? ' Resets ' + fmtDate(resetAt) + '.' : '');
+      app.appendChild(depletedNote);
+    } else if (isLow) {
+      var lowNote = document.createElement('div');
+      lowNote.className = 'warn-notice';
+      lowNote.textContent = 'Budget running low' + (plan === 'pro_plus' && resetAt ? ' — resets ' + fmtDate(resetAt) : '') + '.';
+      app.appendChild(lowNote);
+    }
+
+    // Legend
+    if (totalUsed > 0) {
+      var hr = document.createElement('hr');
+      hr.className = 'divider';
+      app.appendChild(hr);
+
+      var legend = document.createElement('div');
+      legend.className = 'legend';
+
+      [
+        { cls: 'users', label: 'Readers (AI Chat)', value: usedUsers },
+        { cls: 'admin', label: 'Admin & AI Agent', value: usedAdmin },
+        { cls: 'trans', label: 'AI Translations', value: usedTrans },
+      ].forEach(function (row) {
+        var r = document.createElement('div');
+        r.className = 'legend-row';
+
+        var lbl = document.createElement('div');
+        lbl.className = 'legend-label';
+        var dot = document.createElement('span');
+        dot.className = 'legend-dot ' + row.cls;
+        lbl.appendChild(dot);
+        lbl.appendChild(document.createTextNode(row.label));
+
+        var val = document.createElement('span');
+        val.className = 'legend-value';
+        val.textContent = fmt(row.value) + ' credits';
+
+        r.appendChild(lbl);
+        r.appendChild(val);
+        legend.appendChild(r);
+      });
+
+      app.appendChild(legend);
+    }
+
+    // Upgrade CTA for free
+    if (plan === 'free') {
+      var cta = document.createElement('button');
+      cta.className = 'upgrade-cta';
+      cta.textContent = 'Upgrade to PRO for 20,000 lifetime credits';
+      // No action in sandboxed iframe — just visual
+      app.appendChild(cta);
+    }
+  }
+
+  function initFromSeed(seed) {
+    if (!seed) return;
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    render(seed);
+  }
+
+  window.addEventListener('message', function (event) {
+    var msg = event.data;
+    if (!msg || typeof msg.type !== 'string') return;
+    if (msg.type === 'ui/initialize') initFromSeed(msg.seed);
+  });
+
+  window.parent.postMessage({ type: 'ui/ready' }, '*');
+})();
+</script>
+</body>
+</html>

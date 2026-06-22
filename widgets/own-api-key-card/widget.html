@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Own API Key</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #ffffff;
+      --border: #e5e7eb;
+      --text: #111827;
+      --text-muted: #6b7280;
+      --input-bg: rgba(243,244,246,0.5);
+      --input-border: #e5e7eb;
+      --input-focus: #6366f1;
+      --btn-bg: #ffffff;
+      --btn-border: #d1d5db;
+      --btn-text: #111827;
+      --btn-hover: #f9fafb;
+      --btn-disabled-bg: #f3f4f6;
+      --btn-disabled-border: #e5e7eb;
+      --btn-disabled-text: #9ca3af;
+      --badge-set-bg: rgba(16,185,129,0.1);
+      --badge-set-text: #065f46;
+      --badge-set-border: rgba(16,185,129,0.3);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0a0a0a;
+        --border: #2a2a2a;
+        --text: #ededed;
+        --text-muted: #888888;
+        --input-bg: rgba(26,26,26,0.6);
+        --input-border: #2a2a2a;
+        --input-focus: #818cf8;
+        --btn-bg: #ededed;
+        --btn-border: #555555;
+        --btn-text: #111111;
+        --btn-hover: #ffffff;
+        --btn-disabled-bg: #1a1a1a;
+        --btn-disabled-border: #2a2a2a;
+        --btn-disabled-text: #555555;
+        --badge-set-bg: rgba(16,185,129,0.15);
+        --badge-set-text: #6ee7b7;
+        --badge-set-border: rgba(16,185,129,0.25);
+      }
+    }
+
+    html, body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    #app { padding: 20px; max-width: 600px; display: flex; flex-direction: column; gap: 12px; }
+
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 500;
+      background: var(--badge-set-bg);
+      color: var(--badge-set-text);
+      border: 1px solid var(--badge-set-border);
+      width: fit-content;
+    }
+    .status-badge .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: currentColor;
+    }
+
+    .no-key-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 999px; font-size: 12px;
+      background: rgba(107,114,128,0.1);
+      color: var(--text-muted);
+      border: 1px solid rgba(107,114,128,0.2);
+      width: fit-content;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label { font-size: 12px; color: var(--text-muted); }
+
+    .input-row { display: flex; gap: 8px; align-items: center; }
+
+    .field input {
+      flex: 1; padding: 6px 12px;
+      border: 1px solid var(--input-border);
+      border-radius: 6px;
+      background: var(--input-bg);
+      color: var(--text);
+      font-size: 13px;
+      font-family: monospace;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .field input:focus { border-color: var(--input-focus); }
+
+    .hint { font-size: 11px; color: var(--text-muted); }
+
+    .footer {
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: flex-end;
+    }
+
+    .save-btn {
+      padding: 6px 16px; border-radius: 8px; font-size: 12px; font-weight: 500;
+      cursor: pointer; transition: all 0.15s ease; white-space: nowrap;
+      border: 1px solid var(--btn-border);
+      background: var(--btn-bg);
+      color: var(--btn-text);
+    }
+    .save-btn:hover:not(:disabled) { background: var(--btn-hover); }
+    .save-btn:disabled {
+      background: var(--btn-disabled-bg);
+      border-color: var(--btn-disabled-border);
+      color: var(--btn-disabled-text);
+      cursor: not-allowed;
+    }
+
+    #loading {
+      display: flex; align-items: center; justify-content: center;
+      height: 120px; color: var(--text-muted); font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="loading">Loading...</div>
+<div id="app" style="display:none"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  // Write-only — the widget never holds the real key.
+  // draft is the new value typed by the user (empty = not edited).
+  var hasKey = false;
+  var draft = '';   // always starts empty (write-only)
+  var edited = false;
+
+  function render() {
+    var app = document.getElementById('app');
+    app.innerHTML = '';
+
+    // Status badge
+    var badge;
+    if (hasKey) {
+      badge = document.createElement('div');
+      badge.className = 'status-badge';
+      var dot = document.createElement('span');
+      dot.className = 'dot';
+      badge.appendChild(dot);
+      badge.appendChild(document.createTextNode('Key is set'));
+    } else {
+      badge = document.createElement('div');
+      badge.className = 'no-key-badge';
+      badge.textContent = 'No key set — using Docsbook shared quota';
+    }
+    app.appendChild(badge);
+
+    // Input field
+    var field = document.createElement('div');
+    field.className = 'field';
+
+    var lbl = document.createElement('label');
+    lbl.textContent = hasKey ? 'Replace API key' : 'Enter API key';
+    field.appendChild(lbl);
+
+    var inputRow = document.createElement('div');
+    inputRow.className = 'input-row';
+
+    var input = document.createElement('input');
+    input.type = 'password';
+    input.value = draft;
+    input.placeholder = hasKey ? 'Enter new key to replace...' : 'sk-...';
+    input.autocomplete = 'off';
+    input.spellcheck = false;
+    input.addEventListener('input', function (e) {
+      draft = e.target.value;
+      edited = true;
+      updateBtn();
+    });
+    inputRow.appendChild(input);
+    field.appendChild(inputRow);
+
+    var hint = document.createElement('span');
+    hint.className = 'hint';
+    hint.textContent = 'Supports OpenAI, Anthropic, and other providers. Leave empty and save to clear.';
+    field.appendChild(hint);
+
+    app.appendChild(field);
+
+    // Footer
+    var footer = document.createElement('div');
+    footer.className = 'footer';
+
+    var btn = document.createElement('button');
+    btn.className = 'save-btn';
+    btn.id = 'save-btn';
+    btn.textContent = 'Save';
+    btn.disabled = !edited;
+    btn.addEventListener('click', handleSave);
+
+    footer.appendChild(btn);
+    app.appendChild(footer);
+  }
+
+  function updateBtn() {
+    var btn = document.getElementById('save-btn');
+    if (btn) btn.disabled = !edited;
+  }
+
+  function handleSave() {
+    if (!edited) return;
+    // Only send patch when user has typed something (even empty = clear).
+    window.parent.postMessage({ type: 'ui/patch', patch: { aiApiKey: draft } }, '*');
+    // Update hasKey optimistically
+    hasKey = draft.length > 0;
+    draft = '';
+    edited = false;
+    render();
+  }
+
+  function initFromSeed(seed) {
+    if (!seed) return;
+    // seed.masked === true always; seed.hasKey tells if key exists
+    hasKey = Boolean(seed.hasKey);
+    draft = '';
+    edited = false;
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    render();
+  }
+
+  window.addEventListener('message', function (event) {
+    var msg = event.data;
+    if (!msg || typeof msg.type !== 'string') return;
+    if (msg.type === 'ui/initialize') initFromSeed(msg.seed);
+  });
+
+  window.parent.postMessage({ type: 'ui/ready' }, '*');
+})();
+</script>
+</body>
+</html>

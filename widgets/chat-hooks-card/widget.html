@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat Hooks</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #ffffff;
+      --border: #e5e7eb;
+      --text: #111827;
+      --text-muted: #6b7280;
+      --input-bg: rgba(243,244,246,0.5);
+      --input-border: #e5e7eb;
+      --input-focus: #6366f1;
+      --btn-bg: #ffffff;
+      --btn-border: #d1d5db;
+      --btn-text: #111827;
+      --btn-hover: #f9fafb;
+      --btn-disabled-bg: #f3f4f6;
+      --btn-disabled-border: #e5e7eb;
+      --btn-disabled-text: #9ca3af;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0a0a0a;
+        --border: #2a2a2a;
+        --text: #ededed;
+        --text-muted: #888888;
+        --input-bg: rgba(26,26,26,0.6);
+        --input-border: #2a2a2a;
+        --input-focus: #818cf8;
+        --btn-bg: #ededed;
+        --btn-border: #555555;
+        --btn-text: #111111;
+        --btn-hover: #ffffff;
+        --btn-disabled-bg: #1a1a1a;
+        --btn-disabled-border: #2a2a2a;
+        --btn-disabled-text: #555555;
+      }
+    }
+
+    html, body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    #app { padding: 20px; max-width: 600px; }
+
+    .fields { display: flex; flex-direction: column; gap: 12px; }
+
+    .text-field { display: flex; flex-direction: column; gap: 4px; }
+    .text-field label { font-size: 12px; color: var(--text-muted); }
+    .text-field .desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; opacity: 0.8; }
+    .text-field input {
+      width: 100%; padding: 6px 12px;
+      border: 1px solid var(--input-border);
+      border-radius: 6px;
+      background: var(--input-bg);
+      color: var(--text);
+      font-size: 13px;
+      font-family: monospace;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .text-field input:focus { border-color: var(--input-focus); }
+
+    .footer {
+      margin-top: 16px; padding-top: 12px;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: flex-end;
+    }
+
+    .save-btn {
+      padding: 6px 16px; border-radius: 8px; font-size: 12px; font-weight: 500;
+      cursor: pointer; transition: all 0.15s ease; white-space: nowrap;
+      border: 1px solid var(--btn-border);
+      background: var(--btn-bg);
+      color: var(--btn-text);
+    }
+    .save-btn:hover:not(:disabled) { background: var(--btn-hover); }
+    .save-btn:disabled {
+      background: var(--btn-disabled-bg);
+      border-color: var(--btn-disabled-border);
+      color: var(--btn-disabled-text);
+      cursor: not-allowed;
+    }
+
+    #loading {
+      display: flex; align-items: center; justify-content: center;
+      height: 120px; color: var(--text-muted); font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="loading">Loading...</div>
+<div id="app" style="display:none"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var HOOKS = [
+    { key: 'aiChatPreHookUrl', seedKey: 'preHookUrl', label: 'Pre-hook URL', desc: 'Called before the AI processes each message.' },
+    { key: 'aiChatPostHookUrl', seedKey: 'postHookUrl', label: 'Post-hook URL', desc: 'Called after the AI response is complete.' },
+    { key: 'aiChatStreamingWebhookUrl', seedKey: 'streamingWebhookUrl', label: 'Streaming webhook URL', desc: 'Receives streaming chunks as they arrive.' },
+  ];
+
+  var draft = {};
+  var saved = {};
+
+  function isDirty() {
+    return HOOKS.some(function (h) { return draft[h.key] !== saved[h.key]; });
+  }
+
+  function render() {
+    var app = document.getElementById('app');
+    app.innerHTML = '';
+
+    var fields = document.createElement('div');
+    fields.className = 'fields';
+
+    HOOKS.forEach(function (h) {
+      var wrapper = document.createElement('div');
+      wrapper.className = 'text-field';
+
+      var lbl = document.createElement('label');
+      lbl.textContent = h.label;
+      wrapper.appendChild(lbl);
+
+      var input = document.createElement('input');
+      input.type = 'url';
+      input.value = draft[h.key] || '';
+      input.placeholder = 'https://...';
+      input.setAttribute('data-key', h.key);
+      input.addEventListener('input', function (e) {
+        draft[h.getAttribute ? h.getAttribute('data-key') : h.key] = e.target.value;
+        // re-read key from the element
+        var k = e.target.getAttribute('data-key');
+        draft[k] = e.target.value;
+        updateBtn();
+      });
+      wrapper.appendChild(input);
+
+      var desc = document.createElement('span');
+      desc.className = 'desc';
+      desc.textContent = h.desc;
+      wrapper.appendChild(desc);
+
+      fields.appendChild(wrapper);
+    });
+
+    app.appendChild(fields);
+
+    var footer = document.createElement('div');
+    footer.className = 'footer';
+
+    var btn = document.createElement('button');
+    btn.className = 'save-btn';
+    btn.id = 'save-btn';
+    btn.textContent = 'Save';
+    btn.disabled = !isDirty();
+    btn.addEventListener('click', handleSave);
+
+    footer.appendChild(btn);
+    app.appendChild(footer);
+  }
+
+  function updateBtn() {
+    var btn = document.getElementById('save-btn');
+    if (btn) btn.disabled = !isDirty();
+  }
+
+  function handleSave() {
+    if (!isDirty()) return;
+    var patch = {};
+    HOOKS.forEach(function (h) {
+      if (draft[h.key] !== saved[h.key]) patch[h.key] = draft[h.key];
+    });
+    if (Object.keys(patch).length === 0) return;
+    window.parent.postMessage({ type: 'ui/patch', patch: patch }, '*');
+    saved = Object.assign({}, draft);
+    updateBtn();
+  }
+
+  function initFromSeed(seed) {
+    if (!seed) return;
+    draft = {};
+    saved = {};
+    HOOKS.forEach(function (h) {
+      var v = seed[h.seedKey];
+      draft[h.key] = (v != null && v !== undefined) ? String(v) : '';
+      saved[h.key] = draft[h.key];
+    });
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    render();
+  }
+
+  window.addEventListener('message', function (event) {
+    var msg = event.data;
+    if (!msg || typeof msg.type !== 'string') return;
+    if (msg.type === 'ui/initialize') initFromSeed(msg.seed);
+  });
+
+  window.parent.postMessage({ type: 'ui/ready' }, '*');
+})();
+</script>
+</body>
+</html>

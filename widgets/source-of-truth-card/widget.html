@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Source of Truth</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #ffffff;
+      --border: #e5e7eb;
+      --text: #111827;
+      --text-muted: #6b7280;
+      --input-bg: rgba(243,244,246,0.5);
+      --code-bg: #f3f4f6;
+      --toggle-off: #d1d5db;
+      --toggle-on: #111827;
+      --toggle-thumb: #ffffff;
+      --btn-bg: #ffffff;
+      --btn-border: #d1d5db;
+      --btn-text: #111827;
+      --btn-hover: #f9fafb;
+      --btn-disabled-bg: #f3f4f6;
+      --btn-disabled-border: #e5e7eb;
+      --btn-disabled-text: #9ca3af;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0a0a0a;
+        --border: #2a2a2a;
+        --text: #ededed;
+        --text-muted: #888888;
+        --input-bg: rgba(26,26,26,0.6);
+        --code-bg: #111111;
+        --toggle-off: #333333;
+        --toggle-on: #ededed;
+        --toggle-thumb: #111111;
+        --btn-bg: #ededed;
+        --btn-border: #555555;
+        --btn-text: #111111;
+        --btn-hover: #ffffff;
+        --btn-disabled-bg: #1a1a1a;
+        --btn-disabled-border: #2a2a2a;
+        --btn-disabled-text: #555555;
+      }
+    }
+
+    html, body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    #app { padding: 20px; max-width: 600px; display: flex; flex-direction: column; gap: 14px; }
+
+    .description { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+    .description a { color: inherit; }
+
+    .install-block {
+      padding: 10px 14px;
+      border-radius: 6px;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+    }
+    .install-block .label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--text-muted); margin-bottom: 4px;
+    }
+    .install-block code {
+      display: block; font-family: monospace; font-size: 12px; color: var(--text);
+      word-break: break-all; user-select: all;
+    }
+
+    .toggle-row {
+      display: flex; align-items: center; gap: 12px;
+      cursor: pointer; user-select: none;
+      background: none; border: none; padding: 0; width: 100%; text-align: left;
+    }
+
+    .toggle-track {
+      position: relative; flex-shrink: 0;
+      width: 44px; height: 24px; border-radius: 9999px;
+      background: var(--toggle-off);
+      transition: background 0.15s ease;
+    }
+    .toggle-track.on { background: var(--toggle-on); }
+
+    .toggle-thumb {
+      position: absolute; top: 2px; left: 2px;
+      width: 20px; height: 20px; border-radius: 9999px;
+      background: var(--toggle-thumb);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      transition: transform 0.15s ease;
+    }
+    .toggle-track.on .toggle-thumb { transform: translateX(20px); }
+    .toggle-label { font-size: 13px; color: var(--text); }
+
+    .footer {
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: flex-end;
+    }
+
+    .save-btn {
+      padding: 6px 16px; border-radius: 8px; font-size: 12px; font-weight: 500;
+      cursor: pointer; transition: all 0.15s ease; white-space: nowrap;
+      border: 1px solid var(--btn-border);
+      background: var(--btn-bg);
+      color: var(--btn-text);
+    }
+    .save-btn:hover:not(:disabled) { background: var(--btn-hover); }
+    .save-btn:disabled {
+      background: var(--btn-disabled-bg);
+      border-color: var(--btn-disabled-border);
+      color: var(--btn-disabled-text);
+      cursor: not-allowed;
+    }
+
+    #loading {
+      display: flex; align-items: center; justify-content: center;
+      height: 120px; color: var(--text-muted); font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="loading">Loading...</div>
+<div id="app" style="display:none"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var INSTALL_CMD = '/plugin install docs-sync@docs-claude-plugins';
+  var REPO_URL = 'https://github.com/Docsbook-io/docs-claude-plugins';
+
+  var draft = false;
+  var saved = false;
+
+  function isDirty() { return draft !== saved; }
+
+  function render() {
+    var app = document.getElementById('app');
+    app.innerHTML = '';
+
+    var desc = document.createElement('p');
+    desc.className = 'description';
+    desc.innerHTML =
+      'Index your documentation locally as a graph for AI coding tools. ' +
+      'Indexing runs entirely inside Claude Code via the ' +
+      '<a href="' + REPO_URL + '" target="_blank" rel="noopener noreferrer">docs-claude-plugins</a>' +
+      ' package — no server quotas, works on private repos.';
+    app.appendChild(desc);
+
+    var installBlock = document.createElement('div');
+    installBlock.className = 'install-block';
+
+    var installLabel = document.createElement('div');
+    installLabel.className = 'label';
+    installLabel.textContent = 'Install in Claude Code';
+    installBlock.appendChild(installLabel);
+
+    var code = document.createElement('code');
+    code.textContent = INSTALL_CMD;
+    installBlock.appendChild(code);
+
+    app.appendChild(installBlock);
+
+    // Toggle
+    var toggleBtn = document.createElement('button');
+    toggleBtn.type = 'button';
+    toggleBtn.className = 'toggle-row';
+
+    var track = document.createElement('div');
+    track.className = 'toggle-track' + (draft ? ' on' : '');
+
+    var thumb = document.createElement('div');
+    thumb.className = 'toggle-thumb';
+    track.appendChild(thumb);
+
+    var lbl = document.createElement('span');
+    lbl.className = 'toggle-label';
+    lbl.textContent = 'Enable Source of Truth graph index';
+    toggleBtn.appendChild(track);
+    toggleBtn.appendChild(lbl);
+
+    toggleBtn.addEventListener('click', function () {
+      draft = !draft;
+      render();
+    });
+
+    app.appendChild(toggleBtn);
+
+    // Footer
+    var footer = document.createElement('div');
+    footer.className = 'footer';
+
+    var btn = document.createElement('button');
+    btn.className = 'save-btn';
+    btn.id = 'save-btn';
+    btn.textContent = 'Save';
+    btn.disabled = !isDirty();
+    btn.addEventListener('click', handleSave);
+
+    footer.appendChild(btn);
+    app.appendChild(footer);
+  }
+
+  function handleSave() {
+    if (!isDirty()) return;
+    window.parent.postMessage({ type: 'ui/patch', patch: { sourceOfTruthEnabled: draft } }, '*');
+    saved = draft;
+    render();
+  }
+
+  function initFromSeed(seed) {
+    if (!seed) return;
+    draft = Boolean(seed.enabled);
+    saved = draft;
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    render();
+  }
+
+  window.addEventListener('message', function (event) {
+    var msg = event.data;
+    if (!msg || typeof msg.type !== 'string') return;
+    if (msg.type === 'ui/initialize') initFromSeed(msg.seed);
+  });
+
+  window.parent.postMessage({ type: 'ui/ready' }, '*');
+})();
+</script>
+</body>
+</html>

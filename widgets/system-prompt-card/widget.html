@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>System Prompt</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #ffffff;
+      --border: #e5e7eb;
+      --text: #111827;
+      --text-muted: #6b7280;
+      --input-bg: rgba(243,244,246,0.5);
+      --input-border: #e5e7eb;
+      --input-focus: #6366f1;
+      --footer-bg: #f9fafb;
+      --btn-bg: #ffffff;
+      --btn-border: #d1d5db;
+      --btn-text: #111827;
+      --btn-hover: #f9fafb;
+      --btn-disabled-bg: #f3f4f6;
+      --btn-disabled-border: #e5e7eb;
+      --btn-disabled-text: #9ca3af;
+      --hint-bg: rgba(243,244,246,0.7);
+      --hint-text: #6b7280;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0a0a0a;
+        --border: #2a2a2a;
+        --text: #ededed;
+        --text-muted: #888888;
+        --input-bg: rgba(26,26,26,0.6);
+        --input-border: #2a2a2a;
+        --input-focus: #818cf8;
+        --footer-bg: #0a0a0a;
+        --btn-bg: #ededed;
+        --btn-border: #555555;
+        --btn-text: #111111;
+        --btn-hover: #ffffff;
+        --btn-disabled-bg: #1a1a1a;
+        --btn-disabled-border: #2a2a2a;
+        --btn-disabled-text: #555555;
+        --hint-bg: rgba(26,26,26,0.7);
+        --hint-text: #888888;
+      }
+    }
+
+    html, body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    #app { padding: 20px; max-width: 600px; display: flex; flex-direction: column; gap: 12px; }
+
+    textarea {
+      width: 100%;
+      min-height: 140px;
+      padding: 8px 12px;
+      border: 1px solid var(--input-border);
+      border-radius: 6px;
+      background: var(--input-bg);
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+      line-height: 1.5;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    textarea:focus { border-color: var(--input-focus); }
+
+    .hint {
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: var(--hint-bg);
+      border: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--hint-text);
+      line-height: 1.6;
+    }
+    .hint code {
+      font-family: monospace;
+      background: rgba(0,0,0,0.06);
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+    @media (prefers-color-scheme: dark) {
+      .hint code { background: rgba(255,255,255,0.08); }
+    }
+
+    .footer {
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .save-btn {
+      padding: 6px 16px; border-radius: 8px; font-size: 12px; font-weight: 500;
+      cursor: pointer; transition: all 0.15s ease; white-space: nowrap;
+      border: 1px solid var(--btn-border);
+      background: var(--btn-bg);
+      color: var(--btn-text);
+    }
+    .save-btn:hover:not(:disabled) { background: var(--btn-hover); }
+    .save-btn:disabled {
+      background: var(--btn-disabled-bg);
+      border-color: var(--btn-disabled-border);
+      color: var(--btn-disabled-text);
+      cursor: not-allowed;
+    }
+
+    #loading {
+      display: flex; align-items: center; justify-content: center;
+      height: 120px; color: var(--text-muted); font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="loading">Loading...</div>
+<div id="app" style="display:none"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var draft = '';
+  var saved = '';
+
+  function isDirty() { return draft !== saved; }
+
+  function render() {
+    var app = document.getElementById('app');
+    app.innerHTML = '';
+
+    var ta = document.createElement('textarea');
+    ta.value = draft;
+    ta.placeholder = 'You are a helpful documentation assistant...';
+    ta.addEventListener('input', function (e) {
+      draft = e.target.value;
+      updateBtn();
+    });
+    app.appendChild(ta);
+
+    var hint = document.createElement('div');
+    hint.className = 'hint';
+    hint.innerHTML =
+      'Available variables: <code>{{title}}</code> (page title), ' +
+      '<code>{{url}}</code> (current URL), <code>{{content}}</code> (page content). ' +
+      'These are substituted at runtime when the AI processes a message.';
+    app.appendChild(hint);
+
+    var footer = document.createElement('div');
+    footer.className = 'footer';
+
+    var btn = document.createElement('button');
+    btn.className = 'save-btn';
+    btn.id = 'save-btn';
+    btn.textContent = 'Save';
+    btn.disabled = !isDirty();
+    btn.addEventListener('click', handleSave);
+
+    footer.appendChild(btn);
+    app.appendChild(footer);
+  }
+
+  function updateBtn() {
+    var btn = document.getElementById('save-btn');
+    if (btn) btn.disabled = !isDirty();
+  }
+
+  function handleSave() {
+    if (!isDirty()) return;
+    window.parent.postMessage({ type: 'ui/patch', patch: { aiChatSystemPrompt: draft } }, '*');
+    saved = draft;
+    updateBtn();
+  }
+
+  function initFromSeed(seed) {
+    if (!seed) return;
+    draft = typeof seed.systemPrompt === 'string' ? seed.systemPrompt : '';
+    saved = draft;
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    render();
+  }
+
+  window.addEventListener('message', function (event) {
+    var msg = event.data;
+    if (!msg || typeof msg.type !== 'string') return;
+    if (msg.type === 'ui/initialize') initFromSeed(msg.seed);
+  });
+
+  window.parent.postMessage({ type: 'ui/ready' }, '*');
+})();
+</script>
+</body>
+</html>
