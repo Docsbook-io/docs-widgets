@@ -1,6 +1,6 @@
 {
   "name": "@docsbook/widgets",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Official Docsbook widget registry — open-source interactive UI widgets for documentation chats (MCP Apps standard)",
   "main": "index.json",
   "keywords": [
