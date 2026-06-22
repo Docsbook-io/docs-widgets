@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pending Translations</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #ffffff;
+      --border: #e5e7eb;
+      --border-subtle: #f3f4f6;
+      --text: #111827;
+      --text-muted: #6b7280;
+      --row-hover: #f9fafb;
+      --lang-bg: #f3f4f6;
+      --lang-text: #4b5563;
+      --btn-approve-bg: #f0fdf4;
+      --btn-approve-border: #86efac;
+      --btn-approve-text: #15803d;
+      --btn-approve-hover: #dcfce7;
+      --btn-reject-bg: #ffffff;
+      --btn-reject-border: #e5e7eb;
+      --btn-reject-text: #6b7280;
+      --btn-reject-hover: #f9fafb;
+      --btn-action-bg: #ffffff;
+      --btn-action-border: #d1d5db;
+      --btn-action-text: #374151;
+      --btn-action-hover: #f3f4f6;
+      --confirm-bg: #fff7ed;
+      --confirm-border: #fed7aa;
+      --confirm-text: #9a3412;
+      --confirm-yes-bg: #dc2626;
+      --confirm-yes-border: #dc2626;
+      --confirm-yes-text: #ffffff;
+      --confirm-yes-hover: #b91c1c;
+      --empty-border: #e5e7eb;
+      --error-bg: #fef2f2;
+      --error-border: #fecaca;
+      --error-text: #b91c1c;
+      --th-bg: #f9fafb;
+      --th-text: #6b7280;
+      --expand-bg: #f9fafb;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0a0a0a;
+        --border: #2a2a2a;
+        --border-subtle: #1a1a1a;
+        --text: #ededed;
+        --text-muted: #888888;
+        --row-hover: #161616;
+        --lang-bg: #222222;
+        --lang-text: #cccccc;
+        --btn-approve-bg: #052e16;
+        --btn-approve-border: #166534;
+        --btn-approve-text: #86efac;
+        --btn-approve-hover: #14532d;
+        --btn-reject-bg: #0a0a0a;
+        --btn-reject-border: #2a2a2a;
+        --btn-reject-text: #cccccc;
+        --btn-reject-hover: #161616;
+        --btn-action-bg: #0a0a0a;
+        --btn-action-border: #2a2a2a;
+        --btn-action-text: #cccccc;
+        --btn-action-hover: #161616;
+        --confirm-bg: #431407;
+        --confirm-border: #7c2d12;
+        --confirm-text: #fed7aa;
+        --confirm-yes-bg: #dc2626;
+        --confirm-yes-border: #dc2626;
+        --confirm-yes-text: #ffffff;
+        --confirm-yes-hover: #b91c1c;
+        --empty-border: #2a2a2a;
+        --error-bg: #450a0a;
+        --error-border: #7f1d1d;
+        --error-text: #fca5a5;
+        --th-bg: #161616;
+        --th-text: #888888;
+        --expand-bg: #0e0e0e;
+      }
+    }
+
+    html, body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    #loading {
+      display: flex; align-items: center; justify-content: center;
+      height: 80px; color: var(--text-muted); font-size: 13px;
+    }
+
+    #app { display: none; padding: 16px; }
+
+    .header {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      margin-bottom: 12px;
+    }
+    .header-title { font-size: 13px; font-weight: 600; color: var(--text); }
+    .header-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .refresh-btn {
+      flex-shrink: 0; padding: 5px 12px;
+      border: 1px solid var(--border); border-radius: 6px;
+      background: var(--bg); color: var(--text-muted); font-size: 12px;
+      cursor: pointer;
+    }
+    .refresh-btn:hover:not(:disabled) { background: var(--row-hover); }
+    .refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .error-banner {
+      padding: 8px 12px; border-radius: 6px;
+      border: 1px solid var(--error-border);
+      background: var(--error-bg);
+      font-size: 12px; color: var(--error-text);
+      margin-bottom: 10px;
+    }
+
+    .empty-box {
+      border: 1px dashed var(--empty-border);
+      border-radius: 8px; padding: 24px 16px;
+      text-align: center;
+    }
+    .empty-box p { font-size: 13px; color: var(--text-muted); }
+    .empty-box .empty-hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+    .table-wrap { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    thead { background: var(--th-bg); }
+    th {
+      text-align: left; font-weight: 500; color: var(--th-text);
+      padding: 7px 10px; white-space: nowrap;
+    }
+    tbody tr { border-top: 1px solid var(--border-subtle); }
+    tbody tr:hover { background: var(--row-hover); }
+    td { padding: 8px 10px; vertical-align: middle; }
+
+    .path-btn {
+      background: none; border: none; cursor: pointer; padding: 0;
+      font-family: monospace; font-size: 11px; color: var(--text);
+      text-align: left; max-width: 200px; overflow: hidden;
+      text-overflow: ellipsis; white-space: nowrap; display: block;
+    }
+    .path-btn:hover { text-decoration: underline; }
+
+    .lang-tag {
+      display: inline-block; padding: 2px 6px; border-radius: 4px;
+      background: var(--lang-bg); color: var(--lang-text);
+      font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+
+    .date-cell { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+
+    .actions-cell { text-align: right; white-space: nowrap; }
+
+    .btn-approve {
+      padding: 4px 8px; border-radius: 5px; font-size: 11px; font-weight: 500; cursor: pointer;
+      border: 1px solid var(--btn-approve-border);
+      background: var(--btn-approve-bg); color: var(--btn-approve-text);
+      margin-right: 5px; transition: background 0.1s;
+    }
+    .btn-approve:hover:not(:disabled) { background: var(--btn-approve-hover); }
+    .btn-approve:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-reject {
+      padding: 4px 8px; border-radius: 5px; font-size: 11px; font-weight: 500; cursor: pointer;
+      border: 1px solid var(--btn-reject-border);
+      background: var(--btn-reject-bg); color: var(--btn-reject-text);
+      transition: background 0.1s;
+    }
+    .btn-reject:hover:not(:disabled) { background: var(--btn-reject-hover); }
+    .btn-reject:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Confirm row */
+    .confirm-row td {
+      background: var(--confirm-bg);
+      padding: 10px 12px;
+    }
+    .confirm-msg {
+      font-size: 12px; color: var(--confirm-text); margin-bottom: 8px; font-weight: 500;
+    }
+    .confirm-actions { display: flex; gap: 8px; }
+
+    .btn-confirm-yes {
+      padding: 5px 12px; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer;
+      border: 1px solid var(--confirm-yes-border);
+      background: var(--confirm-yes-bg); color: var(--confirm-yes-text);
+    }
+    .btn-confirm-yes:hover { background: var(--confirm-yes-hover); }
+
+    .btn-confirm-cancel {
+      padding: 5px 12px; border-radius: 5px; font-size: 11px; font-weight: 500; cursor: pointer;
+      border: 1px solid var(--btn-action-border);
+      background: var(--btn-action-bg); color: var(--btn-action-text);
+    }
+    .btn-confirm-cancel:hover { background: var(--btn-action-hover); }
+
+    /* Expand row */
+    .expand-row td {
+      background: var(--expand-bg);
+      padding: 10px 12px;
+    }
+    .expand-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--text-muted); margin-bottom: 6px;
+    }
+    .expand-content {
+      font-family: monospace; font-size: 11px; color: var(--text);
+      white-space: pre-wrap; word-break: break-word;
+      max-height: 160px; overflow-y: auto;
+      line-height: 1.6;
+    }
+
+    /* Pagination */
+    .pagination {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 10px; font-size: 12px; color: var(--text-muted);
+    }
+    .pagination-btns { display: flex; gap: 6px; }
+    .btn-page {
+      padding: 4px 10px; border-radius: 5px; font-size: 11px; cursor: pointer;
+      border: 1px solid var(--border); background: var(--bg); color: var(--text);
+    }
+    .btn-page:hover:not(:disabled) { background: var(--row-hover); }
+    .btn-page:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .gated-box {
+      border: 1px dashed var(--empty-border); border-radius: 8px;
+      padding: 24px 16px; text-align: center;
+    }
+    .gated-box p { font-size: 13px; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+
+<div id="loading">Loading…</div>
+<div id="app"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var PAGE_SIZE = 20;
+
+  var workspaceId = null;
+  var plan = 'free';
+  var rows = [];
+  var page = 0;
+  var loading = false;
+  var errorMsg = null;
+  var actionId = null;
+  var expandedId = null;
+  var confirmRejectId = null;
+
+  // ── callTool helper ───────────────────────────────────────────────────────────
+  var pending = {};
+  var callId = 0;
+
+  window.addEventListener('message', function (event) {
+    var msg = event.data;
+    if (!msg || typeof msg.type !== 'string') return;
+
+    if (msg.type === 'ui/initialize') {
+      initFromSeed(msg.seed);
+      return;
+    }
+
+    if (msg.type === 'ui/toolResult') {
+      var id = msg.id;
+      if (id !== undefined && pending[id]) {
+        var cb = pending[id];
+        delete pending[id];
+        if (msg.ok === false || msg.error) {
+          cb.reject(new Error(msg.error || 'Tool call failed'));
+        } else {
+          cb.resolve(msg.result);
+        }
+      }
+    }
+  });
+
+  function callTool(name, args) {
+    return new Promise(function (resolve, reject) {
+      var id = String(++callId);
+      pending[id] = { resolve: resolve, reject: reject };
+      window.parent.postMessage({ type: 'ui/callTool', id: id, name: name, args: args || {} }, '*');
+    });
+  }
+
+  // ── Data fetching ─────────────────────────────────────────────────────────────
+
+  function formatDate(iso) {
+    try {
+      var d = new Date(iso);
+      return d.toLocaleString(undefined, {
+        year: 'numeric', month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      });
+    } catch (e) { return iso; }
+  }
+
+  function shortContent(text, max) {
+    max = max || 600;
+    if (!text) return '';
+    var trimmed = text.replace(/\s+/g, ' ').trim();
+    return trimmed.length > max ? trimmed.slice(0, max) + '…' : trimmed;
+  }
+
+  function loadRows() {
+    if (!workspaceId || plan === 'free') return;
+    loading = true;
+    errorMsg = null;
+    render();
+
+    callTool('list_pending_translations', { workspaceId: workspaceId })
+      .then(function (result) {
+        var data = result || {};
+        var list = Array.isArray(data.translations) ? data.translations : [];
+        rows = list.slice().sort(function (a, b) {
+          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+        });
+        loading = false;
+        render();
+      })
+      .catch(function (err) {
+        errorMsg = err.message || 'Failed to load';
+        loading = false;
+        render();
+      });
+  }
+
+  function approveRow(id) {
+    actionId = id;
+    render();
+    callTool('approve_translation', { id: id })
+      .then(function () {
+        rows = rows.filter(function (r) { return r.id !== id; });
+        actionId = null;
+        render();
+      })
+      .catch(function (err) {
+        errorMsg = err.message || 'Failed to approve';
+        actionId = null;
+        render();
+      });
+  }
+
+  function rejectRow(id) {
+    actionId = id;
+    render();
+    callTool('reject_translation', { id: id })
+      .then(function () {
+        rows = rows.filter(function (r) { return r.id !== id; });
+        actionId = null;
+        confirmRejectId = null;
+        render();
+      })
+      .catch(function (err) {
+        errorMsg = err.message || 'Failed to reject';
+        actionId = null;
+        confirmRejectId = null;
+        render();
+      });
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────────
+
+  function render() {
+    var app = document.getElementById('app');
+    app.innerHTML = '';
+
+    // Header
+    var header = document.createElement('div');
+    header.className = 'header';
+
+    var headerLeft = document.createElement('div');
+    var hTitle = document.createElement('div');
+    hTitle.className = 'header-title';
+    hTitle.textContent = 'Pending translations';
+    var hDesc = document.createElement('div');
+    hDesc.className = 'header-desc';
+    hDesc.textContent = 'Draft translations awaiting review. Approve publishes; reject discards.';
+    headerLeft.appendChild(hTitle);
+    headerLeft.appendChild(hDesc);
+
+    var refreshBtn = document.createElement('button');
+    refreshBtn.className = 'refresh-btn';
+    refreshBtn.textContent = loading ? 'Refreshing…' : 'Refresh';
+    refreshBtn.disabled = loading || plan === 'free';
+    refreshBtn.addEventListener('click', function () { page = 0; loadRows(); });
+
+    header.appendChild(headerLeft);
+    header.appendChild(refreshBtn);
+    app.appendChild(header);
+
+    if (plan === 'free') {
+      var gated = document.createElement('div');
+      gated.className = 'gated-box';
+      var gp = document.createElement('p');
+      gp.textContent = 'Review queue is a Pro feature.';
+      gated.appendChild(gp);
+      app.appendChild(gated);
+      return;
+    }
+
+    if (errorMsg) {
+      var errDiv = document.createElement('div');
+      errDiv.className = 'error-banner';
+      errDiv.textContent = errorMsg;
+      app.appendChild(errDiv);
+    }
+
+    if (loading && rows.length === 0) {
+      var loadDiv = document.createElement('div');
+      loadDiv.style.cssText = 'padding:24px;text-align:center;font-size:12px;color:var(--text-muted);';
+      loadDiv.textContent = 'Loading…';
+      app.appendChild(loadDiv);
+      return;
+    }
+
+    if (rows.length === 0) {
+      var empty = document.createElement('div');
+      empty.className = 'empty-box';
+      var ep = document.createElement('p');
+      ep.textContent = 'No pending translations.';
+      var eh = document.createElement('p');
+      eh.className = 'empty-hint';
+      eh.textContent = 'Drafts uploaded via MCP or external pipeline will appear here.';
+      empty.appendChild(ep);
+      empty.appendChild(eh);
+      app.appendChild(empty);
+      return;
+    }
+
+    var totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+    if (page >= totalPages) page = totalPages - 1;
+    var pageRows = rows.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+
+    var tableWrap = document.createElement('div');
+    tableWrap.className = 'table-wrap';
+
+    var table = document.createElement('table');
+
+    // thead
+    var thead = document.createElement('thead');
+    var headRow = document.createElement('tr');
+    var cols = ['Path', 'Lang', 'Updated', ''];
+    cols.forEach(function (col, i) {
+      var th = document.createElement('th');
+      th.textContent = col;
+      if (i === 3) th.style.width = '120px';
+      if (i === 1) th.style.width = '56px';
+      if (i === 2) th.style.width = '130px';
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    var tbody = document.createElement('tbody');
+    pageRows.forEach(function (row) {
+      var busy = actionId === row.id;
+      var expanded = expandedId === row.id;
+      var confirming = confirmRejectId === row.id;
+
+      // Main row
+      var tr = document.createElement('tr');
+
+      var tdPath = document.createElement('td');
+      var pathBtn = document.createElement('button');
+      pathBtn.className = 'path-btn';
+      pathBtn.textContent = row.sourcePath;
+      pathBtn.title = row.sourcePath;
+      pathBtn.addEventListener('click', function () {
+        expandedId = (expandedId === row.id) ? null : row.id;
+        confirmRejectId = null;
+        render();
+      });
+      tdPath.appendChild(pathBtn);
+
+      var tdLang = document.createElement('td');
+      var langTag = document.createElement('span');
+      langTag.className = 'lang-tag';
+      langTag.textContent = row.language;
+      tdLang.appendChild(langTag);
+
+      var tdDate = document.createElement('td');
+      tdDate.className = 'date-cell';
+      tdDate.textContent = formatDate(row.updatedAt);
+
+      var tdActions = document.createElement('td');
+      tdActions.className = 'actions-cell';
+
+      var approveBtn = document.createElement('button');
+      approveBtn.className = 'btn-approve';
+      approveBtn.textContent = busy ? '…' : 'Approve';
+      approveBtn.disabled = busy;
+      approveBtn.addEventListener('click', function () { approveRow(row.id); });
+
+      var rejectBtn = document.createElement('button');
+      rejectBtn.className = 'btn-reject';
+      rejectBtn.textContent = 'Reject';
+      rejectBtn.disabled = busy;
+      rejectBtn.addEventListener('click', function () {
+        confirmRejectId = row.id;
+        expandedId = null;
+        render();
+      });
+
+      tdActions.appendChild(approveBtn);
+      tdActions.appendChild(rejectBtn);
+
+      tr.appendChild(tdPath);
+      tr.appendChild(tdLang);
+      tr.appendChild(tdDate);
+      tr.appendChild(tdActions);
+      tbody.appendChild(tr);
+
+      // Confirm reject row
+      if (confirming) {
+        var confirmTr = document.createElement('tr');
+        confirmTr.className = 'confirm-row';
+        var confirmTd = document.createElement('td');
+        confirmTd.colSpan = 4;
+
+        var msg = document.createElement('div');
+        msg.className = 'confirm-msg';
+        msg.textContent = 'Reject this translation? This cannot be undone.';
+
+        var actions = document.createElement('div');
+        actions.className = 'confirm-actions';
+
+        var yesBtn = document.createElement('button');
+        yesBtn.className = 'btn-confirm-yes';
+        yesBtn.textContent = 'Yes, reject';
+        yesBtn.addEventListener('click', function () { rejectRow(row.id); });
+
+        var cancelBtn = document.createElement('button');
+        cancelBtn.className = 'btn-confirm-cancel';
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.addEventListener('click', function () {
+          confirmRejectId = null;
+          render();
+        });
+
+        actions.appendChild(yesBtn);
+        actions.appendChild(cancelBtn);
+        confirmTd.appendChild(msg);
+        confirmTd.appendChild(actions);
+        confirmTr.appendChild(confirmTd);
+        tbody.appendChild(confirmTr);
+      }
+
+      // Expand row (content preview)
+      if (expanded && !confirming) {
+        var expandTr = document.createElement('tr');
+        expandTr.className = 'expand-row';
+        var expandTd = document.createElement('td');
+        expandTd.colSpan = 4;
+
+        var expandLabel = document.createElement('div');
+        expandLabel.className = 'expand-label';
+        expandLabel.textContent = 'Preview · origin: ' + (row.origin || 'unknown');
+
+        var expandContent = document.createElement('pre');
+        expandContent.className = 'expand-content';
+        expandContent.textContent = shortContent(row.content, 800);
+
+        expandTd.appendChild(expandLabel);
+        expandTd.appendChild(expandContent);
+        expandTr.appendChild(expandTd);
+        tbody.appendChild(expandTr);
+      }
+    });
+
+    table.appendChild(tbody);
+    tableWrap.appendChild(table);
+    app.appendChild(tableWrap);
+
+    // Pagination
+    if (totalPages > 1) {
+      var pag = document.createElement('div');
+      pag.className = 'pagination';
+
+      var pagInfo = document.createElement('span');
+      pagInfo.textContent = 'Page ' + (page + 1) + ' of ' + totalPages + ' · ' + rows.length + ' total';
+
+      var pagBtns = document.createElement('div');
+      pagBtns.className = 'pagination-btns';
+
+      var prevBtn = document.createElement('button');
+      prevBtn.className = 'btn-page';
+      prevBtn.textContent = 'Prev';
+      prevBtn.disabled = page === 0;
+      prevBtn.addEventListener('click', function () { page = Math.max(0, page - 1); render(); });
+
+      var nextBtn = document.createElement('button');
+      nextBtn.className = 'btn-page';
+      nextBtn.textContent = 'Next';
+      nextBtn.disabled = page >= totalPages - 1;
+      nextBtn.addEventListener('click', function () { page = Math.min(totalPages - 1, page + 1); render(); });
+
+      pagBtns.appendChild(prevBtn);
+      pagBtns.appendChild(nextBtn);
+      pag.appendChild(pagInfo);
+      pag.appendChild(pagBtns);
+      app.appendChild(pag);
+    }
+  }
+
+  function initFromSeed(seed) {
+    if (!seed) return;
+    workspaceId = seed.workspaceId != null ? seed.workspaceId : null;
+    plan = String(seed.plan || 'free');
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+
+    if (plan !== 'free' && workspaceId != null) {
+      loadRows();
+    } else {
+      render();
+    }
+  }
+
+  window.parent.postMessage({ type: 'ui/ready' }, '*');
+})();
+</script>
+</body>
+</html>

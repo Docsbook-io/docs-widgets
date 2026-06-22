@@ -746,5 +746,107 @@
     "repository": "https://github.com/docsbook-io/docsbook",
     "raw_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/ask-user/widget.html",
     "widget_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/ask-user/widget.html"
+  },
+  {
+    "name": "translation-languages-card",
+    "description": "Admin card widget for managing translation languages — toggle which languages are enabled for AI translation on the workspace.",
+    "version": "1.0.0",
+    "category": "translation",
+    "modes": [
+      "admin"
+    ],
+    "triggers": [
+      "manage translation languages",
+      "enable language",
+      "add language",
+      "translation languages card"
+    ],
+    "keywords": [
+      "translation",
+      "languages",
+      "i18n",
+      "translate",
+      "enable language"
+    ],
+    "discriminators": [
+      "translation languages",
+      "enable language",
+      "manage translations"
+    ],
+    "mcp_resource_uri": "ui://translation-languages-card/render",
+    "requires_plan": "pro",
+    "built_in": true,
+    "author": "Docsbook",
+    "repository": "https://github.com/docsbook-io/docsbook",
+    "raw_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/translation-languages-card/WIDGET.md",
+    "widget_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/translation-languages-card/widget.html"
+  },
+  {
+    "name": "translation-mode-card",
+    "description": "Admin card widget for choosing the translation mode — auto (built-in AI), manual, or external webhook pipeline.",
+    "version": "1.0.0",
+    "category": "translation",
+    "modes": [
+      "admin"
+    ],
+    "triggers": [
+      "set translation mode",
+      "switch to manual translation",
+      "external translation webhook",
+      "translation mode card"
+    ],
+    "keywords": [
+      "translation mode",
+      "auto",
+      "manual",
+      "external",
+      "webhook"
+    ],
+    "discriminators": [
+      "translation mode",
+      "external webhook",
+      "manual translation"
+    ],
+    "mcp_resource_uri": "ui://translation-mode-card/render",
+    "requires_plan": "pro",
+    "built_in": true,
+    "author": "Docsbook",
+    "repository": "https://github.com/docsbook-io/docsbook",
+    "raw_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/translation-mode-card/WIDGET.md",
+    "widget_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/translation-mode-card/widget.html"
+  },
+  {
+    "name": "pending-translations-card",
+    "description": "Admin card widget for reviewing, approving or rejecting pending (draft) translations — with confirm step before reject.",
+    "version": "1.0.0",
+    "category": "translation",
+    "modes": [
+      "admin"
+    ],
+    "triggers": [
+      "show pending translations",
+      "approve translations",
+      "review translation queue",
+      "pending translations card"
+    ],
+    "keywords": [
+      "pending translations",
+      "approve",
+      "reject",
+      "review",
+      "translation queue"
+    ],
+    "discriminators": [
+      "pending translations",
+      "approve translations",
+      "translation review"
+    ],
+    "mcp_resource_uri": "ui://pending-translations-card/render",
+    "requires_plan": "pro",
+    "built_in": true,
+    "author": "Docsbook",
+    "repository": "https://github.com/docsbook-io/docsbook",
+    "raw_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/pending-translations-card/WIDGET.md",
+    "widget_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/pending-translations-card/widget.html"
   }
 ]

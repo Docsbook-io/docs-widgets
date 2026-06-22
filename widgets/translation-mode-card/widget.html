@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Translation Mode</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #ffffff;
+      --border: #e5e7eb;
+      --text: #111827;
+      --text-muted: #6b7280;
+      --mode-bg: #f9fafb;
+      --mode-border: #e5e7eb;
+      --mode-hover: #f3f4f6;
+      --mode-active-bg: #eff6ff;
+      --mode-active-border: #3b82f6;
+      --radio-border: #d1d5db;
+      --radio-on: #3b82f6;
+      --badge-pro-bg: #f3f4f6;
+      --badge-pro-text: #6b7280;
+      --badge-proplus-bg: #f5f3ff;
+      --badge-proplus-text: #7c3aed;
+      --input-bg: #ffffff;
+      --input-border: #e5e7eb;
+      --input-focus: #3b82f6;
+      --footer-bg: #f9fafb;
+      --btn-bg: #ffffff;
+      --btn-border: #d1d5db;
+      --btn-text: #111827;
+      --btn-hover: #f9fafb;
+      --btn-disabled-bg: #f3f4f6;
+      --btn-disabled-border: #e5e7eb;
+      --btn-disabled-text: #9ca3af;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0a0a0a;
+        --border: #2a2a2a;
+        --text: #ededed;
+        --text-muted: #888888;
+        --mode-bg: #0a0a0a;
+        --mode-border: #2a2a2a;
+        --mode-hover: #161616;
+        --mode-active-bg: #1e3a5f;
+        --mode-active-border: #3b82f6;
+        --radio-border: #444444;
+        --radio-on: #60a5fa;
+        --badge-pro-bg: #222222;
+        --badge-pro-text: #aaaaaa;
+        --badge-proplus-bg: #2d1a4e;
+        --badge-proplus-text: #c4b5fd;
+        --input-bg: #0a0a0a;
+        --input-border: #2a2a2a;
+        --input-focus: #3b82f6;
+        --footer-bg: #0a0a0a;
+        --btn-bg: #ededed;
+        --btn-border: #555555;
+        --btn-text: #111111;
+        --btn-hover: #ffffff;
+        --btn-disabled-bg: #1a1a1a;
+        --btn-disabled-border: #2a2a2a;
+        --btn-disabled-text: #555555;
+      }
+    }
+
+    html, body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    #loading {
+      display: flex; align-items: center; justify-content: center;
+      height: 80px; color: var(--text-muted); font-size: 13px;
+    }
+
+    #app { display: none; padding: 16px; }
+
+    .section-title {
+      font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px;
+    }
+    .section-desc {
+      font-size: 12px; color: var(--text-muted); margin-bottom: 12px;
+    }
+
+    .modes { display: flex; flex-direction: column; gap: 8px; }
+
+    .mode-btn {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 12px 14px; width: 100%; text-align: left;
+      border: 1px solid var(--mode-border);
+      border-radius: 8px;
+      background: var(--mode-bg);
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+    .mode-btn:hover:not(:disabled) { background: var(--mode-hover); }
+    .mode-btn.active {
+      border-color: var(--mode-active-border);
+      background: var(--mode-active-bg);
+    }
+    .mode-btn:disabled { opacity: 0.55; cursor: pointer; }
+
+    .radio {
+      margin-top: 2px; flex-shrink: 0;
+      width: 16px; height: 16px; border-radius: 9999px;
+      border: 2px solid var(--radio-border);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .mode-btn.active .radio { border-color: var(--radio-on); }
+    .radio-dot {
+      width: 8px; height: 8px; border-radius: 9999px;
+      background: var(--radio-on); display: none;
+    }
+    .mode-btn.active .radio-dot { display: block; }
+
+    .mode-content { flex: 1; min-width: 0; }
+    .mode-header { display: flex; align-items: center; gap: 6px; }
+    .mode-name { font-size: 13px; font-weight: 500; color: var(--text); }
+    .badge {
+      font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+      padding: 1px 5px; border-radius: 4px;
+    }
+    .badge-pro { background: var(--badge-pro-bg); color: var(--badge-pro-text); }
+    .badge-proplus { background: var(--badge-proplus-bg); color: var(--badge-proplus-text); }
+    .mode-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .webhook-section { margin-top: 12px; }
+    .webhook-label {
+      display: block; font-size: 12px; font-weight: 500;
+      color: var(--text-muted); margin-bottom: 6px;
+    }
+    .webhook-input {
+      width: 100%; padding: 8px 10px;
+      border: 1px solid var(--input-border); border-radius: 6px;
+      background: var(--input-bg); color: var(--text);
+      font-size: 13px; outline: none;
+      transition: border-color 0.12s;
+    }
+    .webhook-input:focus { border-color: var(--input-focus); }
+    .webhook-hint { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+
+    .error-msg { font-size: 12px; color: #dc2626; margin-top: 10px; }
+
+    .footer {
+      margin-top: 16px; padding-top: 12px;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .footer-status { font-size: 12px; color: var(--text-muted); }
+
+    .save-btn {
+      padding: 6px 16px; border-radius: 8px; font-size: 12px; font-weight: 500;
+      cursor: pointer; transition: all 0.12s ease; white-space: nowrap;
+      border: 1px solid var(--btn-border);
+      background: var(--btn-bg);
+      color: var(--btn-text);
+    }
+    .save-btn:hover:not(:disabled) { background: var(--btn-hover); }
+    .save-btn:disabled {
+      background: var(--btn-disabled-bg);
+      border-color: var(--btn-disabled-border);
+      color: var(--btn-disabled-text);
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+
+<div id="loading">Loading…</div>
+<div id="app"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var MODES = [
+    {
+      value: 'auto',
+      title: 'Auto',
+      description: 'Docsbook automatically translates new and changed pages with built-in AI.',
+      proPlusOnly: false,
+    },
+    {
+      value: 'manual',
+      title: 'Manual',
+      description: 'No automatic translation. Upload or approve translations yourself via API or MCP.',
+      proPlusOnly: false,
+    },
+    {
+      value: 'external',
+      title: 'External webhook',
+      description: 'Forward translation requests to your own pipeline (LLM, TMS, human review).',
+      proPlusOnly: true,
+    },
+  ];
+
+  var currentMode = 'auto';
+  var savedMode = 'auto';
+  var webhookUrl = '';
+  var savedWebhookUrl = '';
+  var plan = 'free';
+  var savedFlash = false;
+  var errorMsg = null;
+
+  function isProPlus() { return plan === 'pro_plus'; }
+  function isFree() { return plan === 'free'; }
+
+  function isDirty() {
+    if (currentMode !== savedMode) return true;
+    if (currentMode === 'external' && webhookUrl.trim() !== savedWebhookUrl) return true;
+    return false;
+  }
+
+  function render() {
+    var app = document.getElementById('app');
+    app.innerHTML = '';
+
+    var title = document.createElement('div');
+    title.className = 'section-title';
+    title.textContent = 'Translation mode';
+    app.appendChild(title);
+
+    var desc = document.createElement('div');
+    desc.className = 'section-desc';
+    desc.textContent = 'Choose how Docsbook produces translations for enabled languages.';
+    app.appendChild(desc);
+
+    var modesDiv = document.createElement('div');
+    modesDiv.className = 'modes';
+
+    MODES.forEach(function (m) {
+      var lockProPlus = m.proPlusOnly && !isProPlus();
+      var lockPaid = isFree();
+      var locked = lockPaid || lockProPlus;
+      var active = currentMode === m.value;
+
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'mode-btn' + (active ? ' active' : '');
+      btn.disabled = locked;
+
+      btn.addEventListener('click', function () {
+        currentMode = m.value;
+        errorMsg = null;
+        render();
+      });
+
+      var radio = document.createElement('div');
+      radio.className = 'radio';
+      var dot = document.createElement('div');
+      dot.className = 'radio-dot';
+      radio.appendChild(dot);
+
+      var content = document.createElement('div');
+      content.className = 'mode-content';
+
+      var header = document.createElement('div');
+      header.className = 'mode-header';
+
+      var name = document.createElement('span');
+      name.className = 'mode-name';
+      name.textContent = m.title;
+      header.appendChild(name);
+
+      if (m.proPlusOnly) {
+        var badgePP = document.createElement('span');
+        badgePP.className = 'badge badge-proplus';
+        badgePP.textContent = 'Pro+';
+        header.appendChild(badgePP);
+      } else if (lockPaid) {
+        var badgePro = document.createElement('span');
+        badgePro.className = 'badge badge-pro';
+        badgePro.textContent = 'Pro';
+        header.appendChild(badgePro);
+      }
+
+      var mDesc = document.createElement('div');
+      mDesc.className = 'mode-desc';
+      mDesc.textContent = m.description;
+
+      content.appendChild(header);
+      content.appendChild(mDesc);
+
+      btn.appendChild(radio);
+      btn.appendChild(content);
+      modesDiv.appendChild(btn);
+    });
+
+    app.appendChild(modesDiv);
+
+    // External webhook URL input (only when external mode is active and Pro+)
+    if (currentMode === 'external' && isProPlus()) {
+      var webhookSection = document.createElement('div');
+      webhookSection.className = 'webhook-section';
+
+      var label = document.createElement('label');
+      label.className = 'webhook-label';
+      label.textContent = 'External webhook URL';
+
+      var input = document.createElement('input');
+      input.type = 'url';
+      input.className = 'webhook-input';
+      input.value = webhookUrl;
+      input.placeholder = 'https://your-pipeline.example.com/translate';
+      input.addEventListener('input', function (e) {
+        webhookUrl = e.target.value;
+        errorMsg = null;
+        updateSaveBtn();
+      });
+
+      var hint = document.createElement('p');
+      hint.className = 'webhook-hint';
+      hint.textContent = 'Docsbook sends the source page payload. Your service must reply with translated content or upload it via upload_translation.';
+
+      webhookSection.appendChild(label);
+      webhookSection.appendChild(input);
+      webhookSection.appendChild(hint);
+      app.appendChild(webhookSection);
+    }
+
+    if (errorMsg) {
+      var errDiv = document.createElement('div');
+      errDiv.className = 'error-msg';
+      errDiv.textContent = errorMsg;
+      app.appendChild(errDiv);
+    }
+
+    // Footer
+    var footer = document.createElement('div');
+    footer.className = 'footer';
+
+    var status = document.createElement('span');
+    status.className = 'footer-status';
+    if (savedFlash) {
+      status.textContent = '✓ Saved';
+    } else if (isFree()) {
+      status.textContent = 'Translation mode is available on Pro.';
+    } else {
+      status.textContent = 'Switch any time.';
+    }
+    footer.appendChild(status);
+
+    var btn = document.createElement('button');
+    btn.className = 'save-btn';
+    btn.id = 'save-btn';
+    btn.textContent = 'Save';
+    btn.disabled = !isDirty();
+    btn.addEventListener('click', handleSave);
+    footer.appendChild(btn);
+
+    app.appendChild(footer);
+  }
+
+  function updateSaveBtn() {
+    var btn = document.getElementById('save-btn');
+    if (btn) btn.disabled = !isDirty();
+  }
+
+  function handleSave() {
+    if (!isDirty()) return;
+    if (currentMode === 'external' && !webhookUrl.trim()) {
+      errorMsg = 'Webhook URL is required for external mode.';
+      render();
+      return;
+    }
+
+    var patch = { translationMode: currentMode };
+    if (currentMode === 'external') {
+      patch.externalTranslationWebhookUrl = webhookUrl.trim();
+    }
+
+    window.parent.postMessage({ type: 'ui/patch', patch: patch }, '*');
+
+    savedMode = currentMode;
+    savedWebhookUrl = webhookUrl.trim();
+    savedFlash = true;
+    render();
+
+    setTimeout(function () {
+      savedFlash = false;
+      render();
+    }, 1800);
+  }
+
+  function initFromSeed(seed) {
+    if (!seed) return;
+    currentMode = String(seed.translationMode || 'auto');
+    savedMode = currentMode;
+    webhookUrl = String(seed.externalTranslationWebhookUrl || '');
+    savedWebhookUrl = webhookUrl;
+    plan = String(seed.plan || 'free');
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    render();
+  }
+
+  window.addEventListener('message', function (event) {
+    var msg = event.data;
+    if (!msg || typeof msg.type !== 'string') return;
+    if (msg.type === 'ui/initialize') {
+      initFromSeed(msg.seed);
+    }
+  });
+
+  window.parent.postMessage({ type: 'ui/ready' }, '*');
+})();
+</script>
+</body>
+</html>
