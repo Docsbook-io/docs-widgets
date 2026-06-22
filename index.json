@@ -848,5 +848,44 @@
     "repository": "https://github.com/docsbook-io/docsbook",
     "raw_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/pending-translations-card/WIDGET.md",
     "widget_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/pending-translations-card/widget.html"
+  },
+  {
+    "name": "webhooks-card",
+    "description": "Admin card widget for managing workspace webhooks — list, register, test, and delete webhook subscriptions with HMAC signing. Groups subscriptions by event category. Test shows pass/fail and HTTP status.",
+    "version": "1.0.0",
+    "category": "webhooks",
+    "modes": [
+      "admin"
+    ],
+    "triggers": [
+      "manage webhooks",
+      "register a webhook",
+      "add webhook",
+      "list webhooks",
+      "delete webhook",
+      "test webhook",
+      "webhook subscriptions"
+    ],
+    "keywords": [
+      "webhooks",
+      "events",
+      "hmac",
+      "delivery",
+      "subscriptions",
+      "register",
+      "test"
+    ],
+    "discriminators": [
+      "webhooks-card",
+      "webhook subscriptions",
+      "register webhook"
+    ],
+    "mcp_resource_uri": "ui://webhooks-card/render",
+    "requires_plan": "pro",
+    "built_in": true,
+    "author": "Docsbook",
+    "repository": "https://github.com/docsbook-io/docsbook",
+    "raw_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/webhooks-card/WIDGET.md",
+    "widget_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/webhooks-card/widget.html"
   }
 ]

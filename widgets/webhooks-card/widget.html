@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Webhooks</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: transparent;
+      color: #0f172a;
+      padding: 16px;
+      font-size: 14px;
+    }
+    @media (prefers-color-scheme: dark) {
+      body { color: #e2e8f0; }
+      .section-header { color: #94a3b8; border-bottom-color: #334155; }
+      .webhook-row { background: #1e293b; border-color: #334155; }
+      .webhook-row:hover { border-color: #475569; }
+      .event-label { color: #e2e8f0; }
+      .url-text { color: #94a3b8; }
+      .delivery-info { color: #64748b; }
+      .empty-state { color: #64748b; border-color: #334155; }
+      .loading { color: #64748b; }
+      .form-panel { background: #1e293b; border-color: #334155; }
+      .form-label { color: #94a3b8; }
+      .form-input { background: #0f172a; border-color: #334155; color: #e2e8f0; }
+      .form-input:focus { border-color: #6366f1; }
+      .btn-secondary { background: #1e293b; border-color: #334155; color: #e2e8f0; }
+      .btn-secondary:hover { background: #334155; }
+      .btn-danger { color: #f87171; border-color: #7f1d1d; background: transparent; }
+      .btn-danger:hover { background: #450a0a; }
+      .btn-danger.confirm { background: #7f1d1d; color: #fca5a5; }
+      .status-badge.success { background: #14532d; color: #86efac; }
+      .status-badge.failed { background: #450a0a; color: #fca5a5; }
+      .status-badge.pending { background: #1e3a5f; color: #93c5fd; }
+      .plan-pill { background: #1e293b; color: #94a3b8; border-color: #334155; }
+      .plan-pill.pro { background: #e2e8f0; color: #0f172a; border-color: #e2e8f0; }
+      .plan-pill.pro_plus { background: #2862fc; color: #fff; border-color: #2862fc; }
+      .secret-banner { background: #052e16; border-color: #14532d; color: #86efac; }
+      .error-banner { background: #450a0a; border-color: #7f1d1d; color: #fca5a5; }
+      .hint-text { color: #64748b; }
+    }
+    .top-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .btn-primary {
+      display: inline-flex; align-items: center;
+      padding: 6px 12px; background: #0f172a; color: #fff;
+      border: none; border-radius: 8px; font-size: 12px; font-weight: 500;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .btn-primary:hover { background: #1e293b; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary {
+      display: inline-flex; align-items: center;
+      padding: 5px 10px; background: #f8fafc; color: #374151;
+      border: 1px solid #e2e8f0; border-radius: 6px; font-size: 11px; font-weight: 500;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .btn-secondary:hover { background: #f1f5f9; }
+    .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-danger {
+      display: inline-flex; align-items: center;
+      padding: 5px 10px; background: transparent; color: #dc2626;
+      border: 1px solid #fecaca; border-radius: 6px; font-size: 11px; font-weight: 500;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .btn-danger:hover { background: #fef2f2; }
+    .btn-danger.confirm { background: #fee2e2; }
+
+    .section-header {
+      font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #64748b;
+      padding: 8px 0 4px; border-bottom: 1px solid #e2e8f0;
+      margin-bottom: 4px;
+    }
+    .webhook-row {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 10px 12px; background: #f8fafc;
+      border: 1px solid #e2e8f0; border-radius: 8px;
+      margin-bottom: 6px; transition: border-color 0.15s;
+    }
+    .webhook-row:hover { border-color: #cbd5e1; }
+    .webhook-info { flex: 1; min-width: 0; }
+    .event-label { font-size: 12px; font-weight: 600; font-family: ui-monospace, monospace; }
+    .url-text {
+      font-size: 11px; color: #64748b; font-family: ui-monospace, monospace;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 340px;
+    }
+    .delivery-info { font-size: 10px; color: #94a3b8; margin-top: 2px; }
+    .webhook-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+    .status-badge {
+      display: inline-flex; align-items: center;
+      padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 600;
+      text-transform: uppercase;
+    }
+    .status-badge.success { background: #f0fdf4; color: #166534; }
+    .status-badge.failed { background: #fef2f2; color: #991b1b; }
+    .status-badge.pending { background: #eff6ff; color: #1d4ed8; }
+
+    .plan-pill {
+      display: inline-flex; align-items: center;
+      padding: 1px 5px; border-radius: 4px; font-size: 9px; font-weight: 700;
+      letter-spacing: 0.04em; text-transform: uppercase;
+      border: 1px solid #e2e8f0; background: #f1f5f9; color: #64748b;
+      margin-left: 4px;
+    }
+    .plan-pill.pro { background: #0f172a; color: #fff; border-color: #0f172a; }
+    .plan-pill.pro_plus { background: #2862fc; color: #fff; border-color: #2862fc; }
+
+    .empty-state {
+      border: 1px dashed #e2e8f0; border-radius: 8px;
+      padding: 32px; text-align: center;
+      font-size: 13px; color: #94a3b8;
+    }
+    .loading { text-align: center; padding: 24px; color: #94a3b8; font-size: 13px; }
+
+    .form-panel {
+      background: #f8fafc; border: 1px solid #e2e8f0;
+      border-radius: 10px; padding: 16px; margin-bottom: 16px;
+    }
+    .form-label {
+      display: block; font-size: 10px; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: #64748b; margin-bottom: 4px;
+    }
+    .form-group { margin-bottom: 12px; }
+    .form-input {
+      width: 100%; padding: 7px 10px;
+      border: 1px solid #e2e8f0; border-radius: 6px;
+      font-size: 13px; background: #fff; color: #0f172a;
+      outline: none; transition: border-color 0.15s;
+    }
+    .form-input:focus { border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,0.15); }
+    .form-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+    .hint-text { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+
+    .secret-banner {
+      background: #f0fdf4; border: 1px solid #86efac;
+      border-radius: 8px; padding: 10px 12px; margin-bottom: 12px;
+    }
+    .secret-banner .title { font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+    .secret-row { display: flex; align-items: center; gap: 8px; }
+    .secret-code {
+      flex: 1; font-family: ui-monospace, monospace; font-size: 11px;
+      background: rgba(0,0,0,0.06); padding: 4px 8px; border-radius: 4px;
+      word-break: break-all;
+    }
+    .error-banner {
+      background: #fef2f2; border: 1px solid #fecaca;
+      border-radius: 8px; padding: 8px 12px; font-size: 12px;
+      margin-bottom: 12px; color: #991b1b;
+    }
+    .test-result {
+      font-size: 11px; padding: 2px 0; margin-top: 4px;
+    }
+    .test-result.pass { color: #166534; }
+    .test-result.fail { color: #991b1b; }
+    @media (prefers-color-scheme: dark) {
+      .test-result.pass { color: #86efac; }
+      .test-result.fail { color: #fca5a5; }
+      .btn-primary { background: #e2e8f0; color: #0f172a; }
+      .btn-primary:hover { background: #fff; }
+    }
+  </style>
+</head>
+<body>
+<div id="root"><div class="loading">Loading webhooks…</div></div>
+
+<script>
+  // ── id-correlated callTool bridge ──────────────────────────────────────────
+  const pendingCalls = {}
+
+  function genId() {
+    return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)
+  }
+
+  function callTool(name, args) {
+    return new Promise((resolve, reject) => {
+      const id = genId()
+      pendingCalls[id] = { resolve, reject }
+      window.parent.postMessage({ type: "ui/callTool", id, name, args }, "*")
+      setTimeout(() => {
+        if (pendingCalls[id]) {
+          delete pendingCalls[id]
+          reject(new Error("Tool call timed out"))
+        }
+      }, 15000)
+    })
+  }
+
+  // ── event type metadata (mirrors WebhooksPanel) ────────────────────────────
+  const EVENT_TYPES = [
+    { value: "plan_upgraded",           label: "plan.upgraded",          minPlan: "free",     group: "Plan" },
+    { value: "plan_downgraded",         label: "plan.downgraded",        minPlan: "free",     group: "Plan" },
+    { value: "content_indexed",         label: "content.indexed",        minPlan: "pro",      group: "Content" },
+    { value: "content_outdated",        label: "content.outdated",       minPlan: "pro",      group: "Content" },
+    { value: "translation_completed",   label: "translation.completed",  minPlan: "pro",      group: "Translation" },
+    { value: "translation_outdated",    label: "translation.outdated",   minPlan: "pro",      group: "Translation" },
+    { value: "translation_needed",      label: "translation.needed",     minPlan: "pro",      group: "Translation" },
+    { value: "chat_question_asked",     label: "chat.question_asked",    minPlan: "pro",      group: "Chat" },
+    { value: "chat_no_answer",          label: "chat.no_answer",         minPlan: "pro",      group: "Chat" },
+    { value: "chat_negative_feedback",  label: "chat.negative_feedback", minPlan: "pro",      group: "Chat" },
+    { value: "feedback_received",       label: "feedback.received",      minPlan: "pro",      group: "Feedback" },
+    { value: "search_no_results",       label: "search.no_results",      minPlan: "pro",      group: "Search" },
+    { value: "search_popular",          label: "search.popular",         minPlan: "pro",      group: "Search" },
+    { value: "usage_limit_approaching", label: "usage.limit_approaching",minPlan: "pro",      group: "Usage" },
+    { value: "traffic_spike",           label: "traffic.spike",          minPlan: "pro_plus", group: "Traffic" },
+    { value: "traffic_drop",            label: "traffic.drop",           minPlan: "pro_plus", group: "Traffic" },
+    { value: "mcp_tool_called",         label: "mcp.tool_called",        minPlan: "pro_plus", group: "MCP" },
+  ]
+
+  function getEventMeta(value) {
+    return EVENT_TYPES.find(e => e.value === value) || null
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return "—"
+    try { return new Date(iso).toLocaleString() } catch { return iso }
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+  }
+
+  // ── state ──────────────────────────────────────────────────────────────────
+  let workspaceId = null
+  let webhooks = []
+  let loading = false
+  let error = null
+  let initialized = false
+
+  // form state
+  let formOpen = false
+  let formEvent = EVENT_TYPES[0].value
+  let formUrl = ""
+  let formSecret = ""
+  let creating = false
+  let createdSecret = null
+
+  // per-row confirm-delete state (webhookId → stage: "idle"|"confirm")
+  const deleteStage = {}
+
+  // per-row test result (webhookId → { pass, status, msg })
+  const testResults = {}
+  const testingRow = {}
+
+  // ── helpers ────────────────────────────────────────────────────────────────
+  function planPillHtml(minPlan) {
+    if (minPlan === "free") return ""
+    const cls = minPlan === "pro_plus" ? "pro_plus" : "pro"
+    const lbl = minPlan === "pro_plus" ? "Pro+" : "Pro"
+    return `<span class="plan-pill ${cls}">${lbl}</span>`
+  }
+
+  function statusBadgeHtml(status) {
+    if (!status) return "<span style=\"font-size:10px;color:#94a3b8\">never</span>"
+    const cls = status === "success" || status === "delivered" ? "success"
+              : status === "failed" ? "failed"
+              : "pending"
+    return `<span class="status-badge ${cls}">${escapeHtml(status)}</span>`
+  }
+
+  function groupWebhooks(rows) {
+    const groups = {}
+    for (const w of rows) {
+      const meta = getEventMeta(w.event_type)
+      const grp = meta ? meta.group : "Other"
+      if (!groups[grp]) groups[grp] = []
+      groups[grp].push(w)
+    }
+    return groups
+  }
+
+  // ── render ─────────────────────────────────────────────────────────────────
+  function render() {
+    const root = document.getElementById("root")
+    let html = ""
+
+    // Error banner
+    if (error) {
+      html += `<div class="error-banner">${escapeHtml(error)}</div>`
+    }
+
+    // Secret banner (shown after successful registration)
+    if (createdSecret) {
+      html += `
+        <div class="secret-banner">
+          <div class="title">Webhook #${escapeHtml(String(createdSecret.id))} created — copy the signing secret now (shown once).</div>
+          <div class="secret-row">
+            <code class="secret-code" id="secret-code">${escapeHtml(createdSecret.secret)}</code>
+            <button class="btn-secondary" id="copy-secret">Copy</button>
+            <button class="btn-secondary" id="dismiss-secret">Dismiss</button>
+          </div>
+        </div>`
+    }
+
+    // Top bar
+    html += `
+      <div class="top-bar">
+        <span style="font-size:13px;font-weight:600">Webhook Subscriptions</span>
+        <button class="btn-primary" id="toggle-form" ${loading ? "disabled" : ""}>
+          ${formOpen ? "Cancel" : "+ New webhook"}
+        </button>
+      </div>`
+
+    // Registration form
+    if (formOpen) {
+      html += `
+        <div class="form-panel">
+          <div class="form-group">
+            <label class="form-label">Event</label>
+            <select class="form-input" id="form-event">
+              ${EVENT_TYPES.map(e => `
+                <option value="${escapeHtml(e.value)}" ${formEvent === e.value ? "selected" : ""}>
+                  ${escapeHtml(e.label)}${e.minPlan === "pro_plus" ? " (Pro+)" : e.minPlan === "pro" ? " (Pro)" : ""}
+                </option>`).join("")}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Endpoint URL</label>
+            <input class="form-input" id="form-url" type="url"
+              placeholder="https://your-handler.example.com/docsbook"
+              value="${escapeHtml(formUrl)}" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Signing secret (optional)</label>
+            <input class="form-input" id="form-secret" type="text"
+              placeholder="Leave empty to auto-generate (recommended)"
+              value="${escapeHtml(formSecret)}" style="font-family:ui-monospace,monospace" />
+            <div class="hint-text">Min 16 chars. Used for X-Docsbook-Signature (HMAC SHA256).</div>
+          </div>
+          <div class="form-row">
+            <button class="btn-secondary" id="form-cancel">Cancel</button>
+            <button class="btn-primary" id="form-submit" ${creating || !formUrl ? "disabled" : ""}>
+              ${creating ? "Creating…" : "Create webhook"}
+            </button>
+          </div>
+        </div>`
+    }
+
+    // Webhook list
+    if (loading) {
+      html += `<div class="loading">Loading webhooks…</div>`
+    } else if (webhooks.length === 0) {
+      html += `<div class="empty-state">No webhooks yet.<br>Register one to receive HMAC-signed HTTP callbacks on workspace events.</div>`
+    } else {
+      const groups = groupWebhooks(webhooks)
+      for (const [grp, rows] of Object.entries(groups)) {
+        html += `<div class="section-header">${escapeHtml(grp)}</div>`
+        for (const w of rows) {
+          const meta = getEventMeta(w.event_type)
+          const del = deleteStage[w.id] || "idle"
+          const testing = testingRow[w.id] || false
+          const tr = testResults[w.id]
+          html += `
+            <div class="webhook-row" data-id="${w.id}">
+              <div class="webhook-info">
+                <div class="event-label">
+                  ${escapeHtml(meta ? meta.label : w.event_type)}
+                  ${meta ? planPillHtml(meta.minPlan) : ""}
+                </div>
+                <div class="url-text" title="${escapeHtml(w.url)}">${escapeHtml(w.url)}</div>
+                <div class="delivery-info">
+                  ${statusBadgeHtml(w.last_delivery_status)}
+                  ${w.last_delivery_at ? `<span style="margin-left:4px">${escapeHtml(fmtDate(w.last_delivery_at))}</span>` : ""}
+                </div>
+                ${tr ? `<div class="test-result ${tr.pass ? "pass" : "fail"}">${escapeHtml(tr.msg)}</div>` : ""}
+              </div>
+              <div class="webhook-actions">
+                <button class="btn-secondary btn-test" data-id="${w.id}" ${testing ? "disabled" : ""}>
+                  ${testing ? "Testing…" : "Test"}
+                </button>
+                ${del === "confirm"
+                  ? `<button class="btn-danger confirm btn-delete-confirm" data-id="${w.id}">Confirm delete</button>
+                     <button class="btn-secondary btn-delete-cancel" data-id="${w.id}">Cancel</button>`
+                  : `<button class="btn-danger btn-delete" data-id="${w.id}">Delete</button>`}
+              </div>
+            </div>`
+        }
+      }
+    }
+
+    root.innerHTML = html
+    attachHandlers()
+  }
+
+  function attachHandlers() {
+    // Toggle form
+    const tf = document.getElementById("toggle-form")
+    if (tf) tf.addEventListener("click", () => {
+      formOpen = !formOpen
+      if (!formOpen) { formUrl = ""; formSecret = "" }
+      render()
+    })
+
+    // Form fields
+    const fe = document.getElementById("form-event")
+    if (fe) fe.addEventListener("change", e => { formEvent = e.target.value; render() })
+    const fu = document.getElementById("form-url")
+    if (fu) fu.addEventListener("input", e => { formUrl = e.target.value; render() })
+    const fs = document.getElementById("form-secret")
+    if (fs) fs.addEventListener("input", e => { formSecret = e.target.value })
+
+    // Form cancel/submit
+    const fc = document.getElementById("form-cancel")
+    if (fc) fc.addEventListener("click", () => { formOpen = false; formUrl = ""; formSecret = ""; render() })
+    const fsub = document.getElementById("form-submit")
+    if (fsub) fsub.addEventListener("click", handleCreate)
+
+    // Secret banner
+    const cs = document.getElementById("copy-secret")
+    if (cs) cs.addEventListener("click", () => {
+      const code = document.getElementById("secret-code")
+      if (code) navigator.clipboard.writeText(code.textContent || "").catch(() => {})
+    })
+    const ds = document.getElementById("dismiss-secret")
+    if (ds) ds.addEventListener("click", () => { createdSecret = null; render() })
+
+    // Test buttons
+    document.querySelectorAll(".btn-test").forEach(btn => {
+      btn.addEventListener("click", () => handleTest(Number(btn.dataset.id)))
+    })
+
+    // Delete buttons
+    document.querySelectorAll(".btn-delete").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = Number(btn.dataset.id)
+        deleteStage[id] = "confirm"
+        render()
+      })
+    })
+    document.querySelectorAll(".btn-delete-confirm").forEach(btn => {
+      btn.addEventListener("click", () => handleDelete(Number(btn.dataset.id)))
+    })
+    document.querySelectorAll(".btn-delete-cancel").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = Number(btn.dataset.id)
+        deleteStage[id] = "idle"
+        render()
+      })
+    })
+  }
+
+  // ── actions ────────────────────────────────────────────────────────────────
+  async function loadWebhooks() {
+    loading = true
+    error = null
+    render()
+    try {
+      const result = await callTool("list_webhooks", { workspaceId })
+      webhooks = Array.isArray(result) ? result : []
+    } catch (e) {
+      error = e.message || "Failed to load webhooks"
+    } finally {
+      loading = false
+    }
+    render()
+  }
+
+  async function handleCreate() {
+    if (!formUrl || creating) return
+    creating = true
+    error = null
+    render()
+    try {
+      const args = { workspaceId, event_type: formEvent, url: formUrl }
+      if (formSecret) args.secret = formSecret
+      const result = await callTool("register_webhook", args)
+      createdSecret = { id: result.id, secret: result.secret }
+      formOpen = false
+      formUrl = ""
+      formSecret = ""
+      await loadWebhooks()
+    } catch (e) {
+      error = e.message || "Failed to create webhook"
+    } finally {
+      creating = false
+    }
+    render()
+  }
+
+  async function handleTest(webhookId) {
+    testingRow[webhookId] = true
+    delete testResults[webhookId]
+    render()
+    try {
+      const result = await callTool("test_webhook", { webhookId })
+      const pass = result.ok === true || (result.status >= 200 && result.status < 300)
+      const statusStr = result.status ? `HTTP ${result.status}` : "no status"
+      testResults[webhookId] = {
+        pass,
+        status: result.status,
+        msg: pass ? `Test passed (${statusStr})` : `Test failed (${statusStr})`,
+      }
+    } catch (e) {
+      testResults[webhookId] = { pass: false, status: null, msg: `Test error: ${e.message}` }
+    } finally {
+      testingRow[webhookId] = false
+    }
+    // Reload webhooks so last_delivery_status updates
+    await loadWebhooks()
+  }
+
+  async function handleDelete(webhookId) {
+    deleteStage[webhookId] = "idle"
+    error = null
+    try {
+      await callTool("delete_webhook", { webhookId })
+      webhooks = webhooks.filter(w => w.id !== webhookId)
+      delete testResults[webhookId]
+      delete testingRow[webhookId]
+    } catch (e) {
+      error = e.message || "Failed to delete webhook"
+    }
+    render()
+  }
+
+  // ── message handler ────────────────────────────────────────────────────────
+  window.addEventListener("message", (event) => {
+    const msg = event.data
+    if (!msg || typeof msg.type !== "string") return
+
+    if (msg.type === "ui/initialize") {
+      const seed = msg.seed || {}
+      workspaceId = seed.workspaceId != null ? Number(seed.workspaceId) : null
+      if (!initialized) {
+        initialized = true
+        if (workspaceId) {
+          loadWebhooks()
+        } else {
+          error = "No workspace context — cannot load webhooks."
+          render()
+        }
+      }
+    }
+
+    if (msg.type === "ui/toolResult") {
+      const pending = pendingCalls[msg.id]
+      if (!pending) return
+      delete pendingCalls[msg.id]
+      if (msg.ok) {
+        pending.resolve(msg.result)
+      } else {
+        pending.reject(new Error(msg.error || "Tool call failed"))
+      }
+    }
+  })
+
+  // Signal ready to parent
+  window.parent.postMessage({ type: "ui/ready" }, "*")
+</script>
+</body>
+</html>
