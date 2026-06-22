@@ -136,8 +136,8 @@
 (function () {
   'use strict';
 
-  var INSTALL_CMD = '/plugin install docs-sync@docs-claude-plugins';
-  var REPO_URL = 'https://github.com/Docsbook-io/docs-claude-plugins';
+  var INSTALL_CMD = 'npx markdown-lsp graph ./docs';
+  var REPO_URL = 'https://github.com/Docsbook-io/markdown-lsp';
 
   var draft = false;
   var saved = false;
@@ -152,9 +152,9 @@
     desc.className = 'description';
     desc.innerHTML =
       'Index your documentation locally as a graph for AI coding tools. ' +
-      'Indexing runs entirely inside Claude Code via the ' +
-      '<a href="' + REPO_URL + '" target="_blank" rel="noopener noreferrer">docs-claude-plugins</a>' +
-      ' package — no server quotas, works on private repos.';
+      'Indexing runs entirely on your machine via the ' +
+      '<a href="' + REPO_URL + '" target="_blank" rel="noopener noreferrer">markdown-lsp</a>' +
+      ' CLI — no server quotas, works on private repos.';
     app.appendChild(desc);
 
     var installBlock = document.createElement('div');
@@ -162,7 +162,7 @@
 
     var installLabel = document.createElement('div');
     installLabel.className = 'label';
-    installLabel.textContent = 'Install in Claude Code';
+    installLabel.textContent = 'Run in your repo';
     installBlock.appendChild(installLabel);
 
     var code = document.createElement('code');
