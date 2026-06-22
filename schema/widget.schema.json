@@ -1,0 +1,103 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/docsbook-io/docs-widgets/main/schema/widget.schema.json",
+  "title": "Docsbook Widget Frontmatter",
+  "description": "JSON Schema for the YAML frontmatter of a WIDGET.md file in the docs-widgets catalog.",
+  "type": "object",
+  "required": ["name", "description", "version", "category", "modes", "triggers", "mcp_resource_uri"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Unique widget identifier (kebab-case).",
+      "pattern": "^[a-z][a-z0-9-]*[a-z0-9]$",
+      "minLength": 3,
+      "maxLength": 64
+    },
+    "description": {
+      "type": "string",
+      "description": "Short human-readable description used for LLM matching and MCP tool description. Should include when the LLM should use this widget.",
+      "minLength": 20,
+      "maxLength": 2000
+    },
+    "version": {
+      "type": "string",
+      "description": "Semver version of the widget.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?$"
+    },
+    "category": {
+      "type": "string",
+      "description": "High-level taxonomy bucket.",
+      "enum": [
+        "visualization",
+        "forms",
+        "navigation",
+        "ai",
+        "developer",
+        "analytics",
+        "media"
+      ]
+    },
+    "modes": {
+      "type": "array",
+      "description": "Which chat contexts show this widget. 'user' = end-user documentation chat; 'admin' = Docsbook admin chat.",
+      "items": {
+        "type": "string",
+        "enum": ["admin", "user"]
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "triggers": {
+      "type": "array",
+      "description": "Keyword phrases the LLM matches to decide when to activate this widget. These become part of the MCP tool description.",
+      "items": {
+        "type": "string",
+        "minLength": 3
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "mcp_resource_uri": {
+      "type": "string",
+      "description": "The ui:// URI stem for this widget's MCP resource. E.g. 'ui://openapi-renderer/render'.",
+      "pattern": "^ui://"
+    },
+    "requires_plan": {
+      "type": "string",
+      "description": "Minimum Docsbook plan required to use this widget.",
+      "enum": ["pro", "pro_plus"]
+    },
+    "keywords": {
+      "type": "array",
+      "description": "Discovery keywords used by find_widget scoring.",
+      "items": { "type": "string", "minLength": 2 },
+      "uniqueItems": true
+    },
+    "discriminators": {
+      "type": "array",
+      "description": "Exact high-precision phrases for widget matching (e.g. proper nouns, spec names).",
+      "items": { "type": "string", "minLength": 2 },
+      "uniqueItems": true
+    },
+    "built_in": {
+      "type": "boolean",
+      "description": "True for official Docsbook widgets; false for community widgets.",
+      "default": false
+    },
+    "author": {
+      "type": "string",
+      "description": "Author name or organization."
+    },
+    "repository": {
+      "type": "string",
+      "description": "URL of the widget's source repository.",
+      "format": "uri"
+    },
+    "homepage": {
+      "type": "string",
+      "description": "URL of the widget's documentation or homepage.",
+      "format": "uri"
+    }
+  }
+}

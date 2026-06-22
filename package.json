@@ -1,0 +1,34 @@
+{
+  "name": "@docsbook/widgets",
+  "version": "1.0.0",
+  "description": "Official Docsbook widget registry — open-source interactive UI widgets for documentation chats (MCP Apps standard)",
+  "main": "index.json",
+  "keywords": [
+    "docsbook",
+    "mcp",
+    "mcp-apps",
+    "widgets",
+    "documentation",
+    "interactive",
+    "openapi",
+    "swagger",
+    "ui"
+  ],
+  "author": "Dan Bondarev",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/docsbook-io/docs-widgets.git"
+  },
+  "homepage": "https://docsbook.io",
+  "files": [
+    "widgets/",
+    "schema/",
+    "index.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=16"
+  }
+}

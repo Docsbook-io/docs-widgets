@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenAPI Renderer</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #fff; }
+    #url-bar {
+      display: flex; gap: 8px; padding: 12px 16px;
+      border-bottom: 1px solid #e5e7eb; background: #f9fafb;
+    }
+    #url-bar input {
+      flex: 1; padding: 6px 10px; border: 1px solid #d1d5db;
+      border-radius: 6px; font-size: 13px; outline: none;
+    }
+    #url-bar input:focus { border-color: #6366f1; }
+    #url-bar button {
+      padding: 6px 14px; background: #6366f1; color: #fff;
+      border: none; border-radius: 6px; font-size: 13px; cursor: pointer;
+    }
+    #url-bar button:hover { background: #4f46e5; }
+    #status {
+      padding: 10px 16px; font-size: 13px; color: #6b7280;
+      display: none;
+    }
+    #swagger-ui { padding: 8px 0; }
+    .swagger-ui .topbar { display: none; }
+  </style>
+</head>
+<body>
+
+<div id="url-bar">
+  <input id="spec-url" type="text" placeholder="https://petstore.swagger.io/v2/swagger.json" />
+  <button id="load-btn">Load</button>
+</div>
+<div id="status"></div>
+<div id="swagger-ui"></div>
+
+<script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+<script type="module">
+  let ui = null;
+
+  function renderSpec(config) {
+    const target = document.getElementById("swagger-ui");
+    target.innerHTML = "";
+    ui = SwaggerUIBundle({
+      ...config,
+      dom_id: "#swagger-ui",
+      presets: [SwaggerUIBundle.presets.apis, SwaggerUIBundle.SwaggerUIStandalonePreset],
+      layout: "BaseLayout",
+      deepLinking: true,
+      tryItOutEnabled: true,
+    });
+  }
+
+  function showStatus(msg, isError = false) {
+    const el = document.getElementById("status");
+    el.textContent = msg;
+    el.style.display = "block";
+    el.style.color = isError ? "#ef4444" : "#6b7280";
+  }
+
+  function loadFromInput() {
+    const url = document.getElementById("spec-url").value.trim();
+    if (!url) return;
+    showStatus("Loading…");
+    renderSpec({ url });
+    document.getElementById("status").style.display = "none";
+  }
+
+  document.getElementById("load-btn").addEventListener("click", loadFromInput);
+  document.getElementById("spec-url").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") loadFromInput();
+  });
+
+  // MCP Apps bridge
+  try {
+    const { App } = await import("https://cdn.jsdelivr.net/npm/@modelcontextprotocol/ext-apps@latest/dist/app.js");
+    const app = new App();
+
+    app.on("toolResult", (result) => {
+      try {
+        if (result?.specUrl) {
+          document.getElementById("spec-url").value = result.specUrl;
+          renderSpec({ url: result.specUrl });
+        } else if (result?.spec) {
+          renderSpec({ spec: result.spec });
+        } else {
+          showStatus("No spec provided by tool result.", true);
+        }
+      } catch (err) {
+        showStatus("Failed to render spec: " + err.message, true);
+      }
+    });
+
+    app.on("initialize", (params) => {
+      if (params?.specUrl) {
+        document.getElementById("spec-url").value = params.specUrl;
+        renderSpec({ url: params.specUrl });
+      } else if (params?.spec) {
+        renderSpec({ spec: params.spec });
+      }
+    });
+  } catch (_) {
+    // Running outside MCP host — URL bar is the fallback
+  }
+
+  // Load petstore as demo if no spec provided after 1s
+  setTimeout(() => {
+    if (!document.getElementById("spec-url").value && !document.querySelector(".swagger-ui .info")) {
+      document.getElementById("spec-url").value = "https://petstore.swagger.io/v2/swagger.json";
+      renderSpec({ url: "https://petstore.swagger.io/v2/swagger.json" });
+    }
+  }, 1000);
+</script>
+</body>
+</html>
