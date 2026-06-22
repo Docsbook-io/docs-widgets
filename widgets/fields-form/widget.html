@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fields Form</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #ffffff;
+      --card-bg: #ffffff;
+      --border: #e5e7eb;
+      --border-subtle: #f3f4f6;
+      --text: #111827;
+      --text-muted: #6b7280;
+      --text-disabled: #9ca3af;
+      --toggle-off: #d1d5db;
+      --toggle-on: #111827;
+      --toggle-thumb: #ffffff;
+      --input-bg: rgba(243,244,246,0.5);
+      --input-border: #e5e7eb;
+      --input-focus: #6366f1;
+      --footer-bg: #f9fafb;
+      --btn-bg: #ffffff;
+      --btn-border: #d1d5db;
+      --btn-text: #111827;
+      --btn-hover: #f9fafb;
+      --btn-disabled-bg: #f3f4f6;
+      --btn-disabled-border: #e5e7eb;
+      --btn-disabled-text: #9ca3af;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0a0a0a;
+        --card-bg: #0a0a0a;
+        --border: #2a2a2a;
+        --border-subtle: #1a1a1a;
+        --text: #ededed;
+        --text-muted: #888888;
+        --text-disabled: #555555;
+        --toggle-off: #333333;
+        --toggle-on: #ededed;
+        --toggle-thumb: #111111;
+        --input-bg: rgba(26,26,26,0.6);
+        --input-border: #2a2a2a;
+        --input-focus: #818cf8;
+        --footer-bg: #0a0a0a;
+        --btn-bg: #ededed;
+        --btn-border: #555555;
+        --btn-text: #111111;
+        --btn-hover: #ffffff;
+        --btn-disabled-bg: #1a1a1a;
+        --btn-disabled-border: #2a2a2a;
+        --btn-disabled-text: #555555;
+      }
+    }
+
+    html, body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    #app {
+      padding: 20px;
+      max-width: 600px;
+    }
+
+    /* ── Fields ── */
+    .fields { display: flex; flex-direction: column; gap: 12px; }
+
+    /* Toggle row */
+    .toggle-row {
+      display: flex; align-items: center; gap: 12px;
+      cursor: pointer; user-select: none;
+      background: none; border: none; padding: 0; width: 100%; text-align: left;
+    }
+    .toggle-row:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .toggle-track {
+      position: relative; flex-shrink: 0;
+      width: 44px; height: 24px; border-radius: 9999px;
+      background: var(--toggle-off);
+      transition: background 0.15s ease;
+    }
+    .toggle-track.on { background: var(--toggle-on); }
+
+    .toggle-thumb {
+      position: absolute; top: 2px; left: 2px;
+      width: 20px; height: 20px; border-radius: 9999px;
+      background: var(--toggle-thumb);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      transition: transform 0.15s ease;
+    }
+    .toggle-track.on .toggle-thumb { transform: translateX(20px); }
+
+    .toggle-label { font-size: 13px; color: var(--text); }
+    .toggle-row:not(:disabled):hover .toggle-label { color: var(--text); opacity: 0.85; }
+
+    /* Text input */
+    .text-field { display: flex; flex-direction: column; gap: 4px; }
+    .text-field label { font-size: 12px; color: var(--text-muted); }
+    .text-field input {
+      width: 100%; padding: 6px 12px;
+      border: 1px solid var(--input-border);
+      border-radius: 6px;
+      background: var(--input-bg);
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .text-field input:focus { border-color: var(--input-focus); }
+    .text-field input:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Color field */
+    .color-field { display: flex; align-items: center; gap: 8px; }
+    .color-field input[type="color"] {
+      width: 28px; height: 28px; flex-shrink: 0;
+      border: 1px solid var(--input-border); border-radius: 4px;
+      background: none; cursor: pointer; padding: 1px;
+    }
+    .color-field input[type="color"]:disabled { opacity: 0.5; cursor: not-allowed; }
+    .color-field .color-label { font-size: 12px; color: var(--text-muted); min-width: 100px; }
+    .color-field input[type="text"] {
+      width: 88px; padding: 4px 8px;
+      border: 1px solid var(--input-border); border-radius: 6px;
+      background: var(--input-bg); color: var(--text);
+      font-size: 12px; font-family: monospace; outline: none;
+      transition: border-color 0.15s;
+    }
+    .color-field input[type="text"]:focus { border-color: var(--input-focus); }
+    .color-field input[type="text"]:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 16px; padding-top: 12px;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: flex-end;
+    }
+
+    .save-btn {
+      padding: 6px 16px; border-radius: 8px; font-size: 12px; font-weight: 500;
+      cursor: pointer; transition: all 0.15s ease; white-space: nowrap;
+      border: 1px solid var(--btn-border);
+      background: var(--btn-bg);
+      color: var(--btn-text);
+    }
+    .save-btn:hover:not(:disabled) { background: var(--btn-hover); }
+    .save-btn:disabled {
+      background: var(--btn-disabled-bg);
+      border-color: var(--btn-disabled-border);
+      color: var(--btn-disabled-text);
+      cursor: not-allowed;
+    }
+
+    /* Loading state */
+    #loading {
+      display: flex; align-items: center; justify-content: center;
+      height: 120px; color: var(--text-muted); font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="loading">Loading…</div>
+<div id="app" style="display:none"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  var fields = [];
+  var draft = {};
+  var saved = {};
+  var isPremium = false;
+  var initialized = false;
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function isBlank(v) {
+    return v === undefined || v === null || v === '';
+  }
+
+  function isValidHex(v) {
+    return /^#[0-9a-fA-F]{6}$/.test(String(v));
+  }
+
+  function isDirty() {
+    return fields.some(function (f) {
+      return draft[f.key] !== saved[f.key];
+    });
+  }
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+  function render() {
+    var app = document.getElementById('app');
+    app.innerHTML = '';
+
+    var fieldsDiv = document.createElement('div');
+    fieldsDiv.className = 'fields';
+
+    fields.forEach(function (f) {
+      var el;
+      if (f.type === 'toggle') {
+        el = renderToggle(f);
+      } else if (f.type === 'color') {
+        el = renderColor(f);
+      } else {
+        el = renderText(f);
+      }
+      fieldsDiv.appendChild(el);
+    });
+
+    app.appendChild(fieldsDiv);
+
+    // Footer with Save
+    var footer = document.createElement('div');
+    footer.className = 'footer';
+
+    var btn = document.createElement('button');
+    btn.className = 'save-btn';
+    btn.textContent = 'Save';
+    btn.disabled = !isDirty();
+    btn.addEventListener('click', handleSave);
+
+    footer.appendChild(btn);
+    app.appendChild(footer);
+  }
+
+  function renderToggle(f) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'toggle-row';
+
+    var track = document.createElement('div');
+    track.className = 'toggle-track' + (draft[f.key] ? ' on' : '');
+
+    var thumb = document.createElement('div');
+    thumb.className = 'toggle-thumb';
+    track.appendChild(thumb);
+
+    var label = document.createElement('span');
+    label.className = 'toggle-label';
+    label.textContent = f.label || f.key;
+
+    btn.appendChild(track);
+    btn.appendChild(label);
+
+    btn.addEventListener('click', function () {
+      draft[f.key] = !draft[f.key];
+      render();
+    });
+
+    return btn;
+  }
+
+  function renderText(f) {
+    var wrapper = document.createElement('div');
+    wrapper.className = 'text-field';
+
+    if (f.label) {
+      var lbl = document.createElement('label');
+      lbl.textContent = f.label;
+      wrapper.appendChild(lbl);
+    }
+
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.value = String(draft[f.key] || '');
+    if (f.placeholder) input.placeholder = f.placeholder;
+
+    input.addEventListener('input', function (e) {
+      draft[f.key] = e.target.value;
+      updateSaveBtn();
+    });
+
+    wrapper.appendChild(input);
+    return wrapper;
+  }
+
+  function renderColor(f) {
+    var wrapper = document.createElement('div');
+    wrapper.className = 'color-field';
+
+    var swatch = document.createElement('input');
+    swatch.type = 'color';
+    var currentVal = String(draft[f.key] || '');
+    swatch.value = isValidHex(currentVal) ? currentVal : '#000000';
+
+    var lbl = document.createElement('span');
+    lbl.className = 'color-label';
+    lbl.textContent = f.label || f.key;
+
+    var hexInput = document.createElement('input');
+    hexInput.type = 'text';
+    hexInput.value = currentVal;
+    hexInput.placeholder = '#000000';
+    hexInput.maxLength = 7;
+
+    swatch.addEventListener('input', function (e) {
+      draft[f.key] = e.target.value;
+      hexInput.value = e.target.value;
+      updateSaveBtn();
+    });
+
+    hexInput.addEventListener('input', function (e) {
+      var v = e.target.value;
+      draft[f.key] = v;
+      if (isValidHex(v)) swatch.value = v;
+      updateSaveBtn();
+    });
+
+    wrapper.appendChild(swatch);
+    wrapper.appendChild(lbl);
+    wrapper.appendChild(hexInput);
+    return wrapper;
+  }
+
+  function updateSaveBtn() {
+    var btn = document.querySelector('.save-btn');
+    if (btn) btn.disabled = !isDirty();
+  }
+
+  // ── Save ───────────────────────────────────────────────────────────────────
+  function handleSave() {
+    var patch = {};
+    fields.forEach(function (f) {
+      if (draft[f.key] === saved[f.key]) return;
+      // For color fields: skip if partially typed and invalid hex
+      if (f.type === 'color' && !isBlank(draft[f.key]) && !isValidHex(draft[f.key])) return;
+      patch[f.key] = draft[f.key];
+    });
+
+    if (Object.keys(patch).length === 0) return;
+
+    // Post patch to host
+    window.parent.postMessage({ type: 'ui/patch', patch: patch }, '*');
+
+    // Optimistically mark saved
+    saved = Object.assign({}, draft);
+    render();
+  }
+
+  // ── Initialize from seed ───────────────────────────────────────────────────
+  function initFromSeed(seed) {
+    // seed shape: { fields: [{key, type, label, placeholder?}], values: {key:val}, isPremium?: bool }
+    // Also accepts legacy flat seed (just key:value pairs) for backward compat,
+    // but the primary path passes the structured object.
+    if (!seed) return;
+
+    var rawFields = seed.fields;
+    var rawValues = seed.values || seed; // fallback to flat seed for compat
+
+    if (!Array.isArray(rawFields) || rawFields.length === 0) return;
+
+    fields = rawFields.map(function (f) {
+      return {
+        key: String(f.key),
+        type: f.type || 'text',
+        label: f.label || '',
+        placeholder: f.placeholder || '',
+      };
+    });
+
+    isPremium = Boolean(seed.isPremium);
+
+    // Build draft and saved from current values
+    draft = {};
+    saved = {};
+    fields.forEach(function (f) {
+      var v = rawValues[f.key];
+      if (f.type === 'toggle') {
+        draft[f.key] = Boolean(v);
+      } else {
+        draft[f.key] = v !== undefined && v !== null ? String(v) : '';
+      }
+      saved[f.key] = draft[f.key];
+    });
+
+    // Show app, hide loading
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    initialized = true;
+
+    render();
+  }
+
+  // ── PostMessage protocol ───────────────────────────────────────────────────
+  window.addEventListener('message', function (event) {
+    var msg = event.data;
+    if (!msg || typeof msg.type !== 'string') return;
+
+    if (msg.type === 'ui/initialize') {
+      initFromSeed(msg.seed);
+    }
+  });
+
+  // Signal ready to host so it sends the seed promptly
+  window.parent.postMessage({ type: 'ui/ready' }, '*');
+
+})();
+</script>
+</body>
+</html>

@@ -23,5 +23,28 @@
     "repository": "https://github.com/docsbook-io/docs-widgets",
     "raw_url": "https://raw.githubusercontent.com/docsbook-io/docs-widgets/main/widgets/openapi-renderer/WIDGET.md",
     "widget_url": "https://raw.githubusercontent.com/docsbook-io/docs-widgets/main/widgets/openapi-renderer/widget.html"
+  },
+  {
+    "name": "fields-form",
+    "description": "Generic admin form renderer for Docsbook workspace settings cards. Renders toggle, text, and color controls from a field definition array and posts patch updates back to the admin host. Use when the admin dashboard needs to display a declarative settings card inside a sandboxed iframe.",
+    "version": "1.0.0",
+    "category": "forms",
+    "modes": ["admin"],
+    "triggers": [
+      "render admin settings form",
+      "workspace settings card",
+      "toggle settings",
+      "fields form widget",
+      "admin card form"
+    ],
+    "keywords": ["admin", "form", "fields", "toggle", "settings", "workspace"],
+    "discriminators": ["fields-form", "admin settings", "workspace card"],
+    "mcp_resource_uri": "ui://fields-form/render",
+    "requires_plan": null,
+    "built_in": true,
+    "author": "Docsbook",
+    "repository": "https://github.com/docsbook-io/docs-widgets",
+    "raw_url": "https://raw.githubusercontent.com/docsbook-io/docs-widgets/main/widgets/fields-form/WIDGET.md",
+    "widget_url": "https://raw.githubusercontent.com/docsbook-io/docs-widgets/main/widgets/fields-form/widget.html"
   }
 ]
