@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skills Catalog</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: transparent;
+      color: #0f172a;
+      padding: 16px;
+      font-size: 14px;
+    }
+    @media (prefers-color-scheme: dark) {
+      body { color: #e2e8f0; }
+      .search-input { background: #1e293b; border-color: #334155; color: #e2e8f0; }
+      .search-input:focus { border-color: #6366f1; }
+      .skill-card { background: #1e293b; border-color: #334155; }
+      .skill-card:hover { border-color: #6366f1; }
+      .skill-desc { color: #94a3b8; }
+      .plan-badge { background: #0f172a; color: #94a3b8; border-color: #334155; }
+      .plan-badge.pro { background: #e2e8f0; color: #0f172a; }
+      .plan-badge.pro_plus { background: #2862fc; color: #fff; border-color: #2862fc; }
+      .empty { color: #64748b; }
+      .loading { color: #64748b; }
+    }
+    .search-wrap { margin-bottom: 12px; }
+    .search-input {
+      width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0;
+      border-radius: 8px; font-size: 13px; outline: none; background: #fff;
+      transition: border-color 0.15s;
+    }
+    .search-input:focus { border-color: #6366f1; }
+    .skill-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+    }
+    .skill-card {
+      background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
+      padding: 12px; cursor: default; transition: border-color 0.15s;
+    }
+    .skill-card:hover { border-color: #a5b4fc; }
+    .skill-name {
+      font-size: 13px; font-weight: 600; margin-bottom: 4px;
+      text-transform: capitalize;
+    }
+    .skill-desc {
+      font-size: 12px; color: #64748b; line-height: 1.4;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .plan-badge {
+      display: inline-block; font-size: 10px; font-weight: 600;
+      padding: 2px 6px; border-radius: 4px; margin-top: 8px;
+      background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .plan-badge.pro { background: #0f172a; color: #fff; border-color: #0f172a; }
+    .plan-badge.pro_plus { background: #2862fc; color: #fff; border-color: #2862fc; }
+    .empty { text-align: center; color: #94a3b8; padding: 24px 0; font-size: 13px; }
+    .loading { text-align: center; color: #94a3b8; padding: 24px 0; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+<div id="root">
+  <div class="loading">Loading skills catalog…</div>
+</div>
+
+<script>
+  let pendingCalls = {}
+  let debounceTimer = null
+  let currentQuery = ""
+  let initialized = false
+
+  function genId() {
+    return Math.random().toString(36).slice(2)
+  }
+
+  function callTool(name, args) {
+    return new Promise((resolve, reject) => {
+      const id = genId()
+      pendingCalls[id] = { resolve, reject }
+      window.parent.postMessage({ type: "ui/callTool", id, name, args }, "*")
+      // Timeout after 10s
+      setTimeout(() => {
+        if (pendingCalls[id]) {
+          delete pendingCalls[id]
+          reject(new Error("Tool call timed out"))
+        }
+      }, 10000)
+    })
+  }
+
+  function formatName(name) {
+    return name.replace(/^docs-/, "").replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase())
+  }
+
+  function planClass(plan) {
+    if (plan === "pro_plus") return "pro_plus"
+    if (plan === "pro") return "pro"
+    return ""
+  }
+
+  function planLabel(plan) {
+    if (plan === "pro_plus") return "PRO+"
+    if (plan === "pro") return "PRO"
+    return "Free"
+  }
+
+  function renderSkills(matches) {
+    const root = document.getElementById("root")
+    const grid = root.querySelector(".skill-grid")
+    if (!grid) return
+
+    if (!matches || matches.length === 0) {
+      grid.innerHTML = '<div class="empty">No skills found.</div>'
+      return
+    }
+
+    grid.innerHTML = matches.map(m => `
+      <div class="skill-card">
+        <div class="skill-name">${escapeHtml(formatName(m.name))}</div>
+        <div class="skill-desc">${escapeHtml(m.description || "")}</div>
+        <span class="plan-badge ${planClass(m.requires_plan || "free")}">${planLabel(m.requires_plan || "free")}</span>
+      </div>
+    `).join("")
+  }
+
+  async function search(query) {
+    currentQuery = query
+    try {
+      const result = await callTool("find_skill", { query: query.trim(), max_results: 12 })
+      if (result && result.matches) {
+        renderSkills(result.matches)
+      } else {
+        renderSkills([])
+      }
+    } catch (e) {
+      const root = document.getElementById("root")
+      const grid = root.querySelector(".skill-grid")
+      if (grid) grid.innerHTML = `<div class="empty">Error loading skills: ${escapeHtml(e.message)}</div>`
+    }
+  }
+
+  function renderShell() {
+    const root = document.getElementById("root")
+    root.innerHTML = `
+      <div class="search-wrap">
+        <input class="search-input" id="search" type="text" placeholder="Search skills…" value="${escapeAttr(currentQuery)}" />
+      </div>
+      <div class="skill-grid">
+        <div class="loading">Loading…</div>
+      </div>
+    `
+
+    root.querySelector("#search").addEventListener("input", (e) => {
+      const q = e.target.value
+      clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(() => search(q), 300)
+    })
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  }
+
+  function escapeAttr(str) {
+    return String(str).replace(/"/g, "&quot;")
+  }
+
+  window.addEventListener("message", (event) => {
+    const msg = event.data
+    if (!msg || typeof msg.type !== "string") return
+
+    if (msg.type === "ui/initialize") {
+      if (!initialized) {
+        initialized = true
+        renderShell()
+        // Initial load: search with empty query to show all
+        search("")
+      }
+    }
+
+    if (msg.type === "ui/toolResult") {
+      const pending = pendingCalls[msg.id]
+      if (!pending) return
+      delete pendingCalls[msg.id]
+      if (msg.ok) {
+        pending.resolve(msg.result)
+      } else {
+        pending.reject(new Error(msg.error || "Tool call failed"))
+      }
+    }
+  })
+
+  window.parent.postMessage({ type: "ui/ready" }, "*")
+</script>
+</body>
+</html>

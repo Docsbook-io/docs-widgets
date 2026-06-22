@@ -42,6 +42,179 @@
     "widget_url": "https://raw.githubusercontent.com/docsbook-io/docs-widgets/main/widgets/openapi-renderer/widget.html"
   },
   {
+    "name": "mcp-install-card",
+    "description": "MCP server connection setup — shows install commands and config snippets for Claude Code, Cursor, and other AI clients to connect to this workspace's MCP endpoint.",
+    "version": "1.0.0",
+    "category": "mcp",
+    "modes": [
+      "admin"
+    ],
+    "triggers": [
+      "install MCP server",
+      "connect MCP",
+      "set up Claude Code MCP",
+      "add MCP to Cursor",
+      "configure MCP client"
+    ],
+    "keywords": [
+      "mcp",
+      "install",
+      "connect",
+      "claude code",
+      "cursor",
+      "server",
+      "setup"
+    ],
+    "discriminators": [
+      "MCP",
+      "install",
+      "connect"
+    ],
+    "mcp_resource_uri": "ui://mcp-install-card/render",
+    "requires_plan": null,
+    "built_in": true,
+    "author": "Docsbook",
+    "repository": "https://github.com/docsbook-io/docsbook",
+    "raw_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/mcp-install-card/WIDGET.md",
+    "widget_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/mcp-install-card/widget.html"
+  },
+  {
+    "name": "mcp-example-questions-card",
+    "description": "Editable list of example MCP questions — shows and manages suggested prompts that users can ask via the MCP server.",
+    "version": "1.0.0",
+    "category": "mcp",
+    "modes": [
+      "admin"
+    ],
+    "triggers": [
+      "example MCP questions",
+      "MCP prompts",
+      "suggested questions",
+      "edit prompts"
+    ],
+    "keywords": [
+      "mcp",
+      "example",
+      "questions",
+      "prompts",
+      "suggested"
+    ],
+    "discriminators": [
+      "example questions",
+      "MCP prompts",
+      "suggested"
+    ],
+    "mcp_resource_uri": "ui://mcp-example-questions-card/render",
+    "requires_plan": null,
+    "built_in": true,
+    "author": "Docsbook",
+    "repository": "https://github.com/docsbook-io/docsbook",
+    "raw_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/mcp-example-questions-card/WIDGET.md",
+    "widget_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/mcp-example-questions-card/widget.html"
+  },
+  {
+    "name": "mcp-raw-config-card",
+    "description": "Raw JSON MCP server config editor — shows the full JSON config block for manual MCP setup. Sensitive fields are redacted with *** in the seed.",
+    "version": "1.0.0",
+    "category": "mcp",
+    "modes": [
+      "admin"
+    ],
+    "triggers": [
+      "raw MCP config",
+      "MCP JSON config",
+      "manual MCP setup",
+      "MCP configuration"
+    ],
+    "keywords": [
+      "mcp",
+      "raw",
+      "config",
+      "json",
+      "configuration"
+    ],
+    "discriminators": [
+      "raw config",
+      "MCP JSON",
+      "manual setup"
+    ],
+    "mcp_resource_uri": "ui://mcp-raw-config-card/render",
+    "requires_plan": null,
+    "built_in": true,
+    "author": "Docsbook",
+    "repository": "https://github.com/docsbook-io/docsbook",
+    "raw_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/mcp-raw-config-card/WIDGET.md",
+    "widget_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/mcp-raw-config-card/widget.html"
+  },
+  {
+    "name": "skills-install-card",
+    "description": "Skills installation flow — shows the CLI commands to install docs-skills into Claude Code, Cursor, and other AI clients.",
+    "version": "1.0.0",
+    "category": "skills",
+    "modes": [
+      "admin"
+    ],
+    "triggers": [
+      "install skills",
+      "set up docs-skills",
+      "add skills to Claude Code",
+      "skills CLI"
+    ],
+    "keywords": [
+      "skills",
+      "install",
+      "docs-skills",
+      "cli",
+      "setup"
+    ],
+    "discriminators": [
+      "install skills",
+      "docs-skills",
+      "skills CLI"
+    ],
+    "mcp_resource_uri": "ui://skills-install-card/render",
+    "requires_plan": null,
+    "built_in": true,
+    "author": "Docsbook",
+    "repository": "https://github.com/docsbook-io/docsbook",
+    "raw_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/skills-install-card/WIDGET.md",
+    "widget_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/skills-install-card/widget.html"
+  },
+  {
+    "name": "skills-catalog-card",
+    "description": "Skills catalog browser — search and browse available docs-skills. Uses the find_skill tool via callTool bridge for debounced search.",
+    "version": "1.0.0",
+    "category": "skills",
+    "modes": [
+      "admin"
+    ],
+    "triggers": [
+      "browse skills catalog",
+      "search skills",
+      "find a skill",
+      "what skills are available"
+    ],
+    "keywords": [
+      "skills",
+      "catalog",
+      "browse",
+      "search",
+      "find"
+    ],
+    "discriminators": [
+      "skills catalog",
+      "browse skills",
+      "search skills"
+    ],
+    "mcp_resource_uri": "ui://skills-catalog-card/render",
+    "requires_plan": null,
+    "built_in": true,
+    "author": "Docsbook",
+    "repository": "https://github.com/docsbook-io/docsbook",
+    "raw_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/skills-catalog-card/WIDGET.md",
+    "widget_url": "https://raw.githubusercontent.com/docsbook-io/docsbook/main/docs-widgets/widgets/skills-catalog-card/widget.html"
+  },
+  {
     "name": "fields-form",
     "description": "Generic admin form renderer for Docsbook workspace settings cards. Renders toggle, text, and color controls from a field definition array and posts patch updates back to the admin host. Use when the admin dashboard needs to display a declarative settings card inside a sandboxed iframe.",
     "version": "1.0.0",

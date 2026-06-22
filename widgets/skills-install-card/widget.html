@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skills Install</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: transparent;
+      color: #0f172a;
+      padding: 16px;
+      font-size: 14px;
+    }
+    @media (prefers-color-scheme: dark) {
+      body { color: #e2e8f0; }
+      .client-tab { background: #1e293b; border-color: #334155; color: #e2e8f0; }
+      .client-tab:hover { background: #243447; }
+      .client-tab.active { background: #0f172a; border-color: #6366f1; color: #818cf8; }
+      .snippet-box { background: #0f172a; border-color: #334155; color: #e2e8f0; }
+      .copy-btn { background: #1e293b; border-color: #334155; color: #e2e8f0; }
+      .copy-btn:hover { background: #334155; }
+      .copy-btn.copied { border-color: #22c55e; color: #22c55e; }
+      .label { color: #94a3b8; }
+      .usage-hint { color: #64748b; background: #1e293b; border-color: #334155; }
+    }
+    .tabs {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px;
+    }
+    .client-tab {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 12px; border: 1px solid #e2e8f0;
+      border-radius: 8px; background: #f8fafc;
+      cursor: pointer; font-size: 13px; font-weight: 500;
+      transition: all 0.15s;
+    }
+    .client-tab:hover { background: #f1f5f9; }
+    .client-tab.active { border-color: #6366f1; background: #faf5ff; color: #4f46e5; }
+    .label { font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 500; }
+    .snippet-group { margin-bottom: 12px; }
+    .snippet-row { display: flex; gap: 8px; align-items: flex-start; }
+    .snippet-box {
+      flex: 1; background: #f1f5f9; border: 1px solid #e2e8f0;
+      border-radius: 8px; padding: 10px 12px;
+      font-family: ui-monospace, "Cascadia Code", "Fira Code", monospace;
+      font-size: 12px; line-height: 1.6; overflow-x: auto; white-space: pre;
+    }
+    .copy-btn {
+      flex-shrink: 0; padding: 6px 12px; border: 1px solid #e2e8f0;
+      border-radius: 8px; background: #f8fafc; cursor: pointer;
+      font-size: 12px; font-weight: 500; transition: all 0.15s;
+    }
+    .copy-btn:hover { background: #e2e8f0; }
+    .copy-btn.copied { border-color: #22c55e; color: #16a34a; background: #f0fdf4; }
+    .usage-hint {
+      margin-top: 8px; font-size: 12px; color: #64748b;
+      background: #f8fafc; border: 1px solid #e2e8f0;
+      border-radius: 6px; padding: 8px 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script>
+  const REPO = "Docsbook-io/docs-skills"
+
+  const CLIENTS = [
+    {
+      key: "claude-code",
+      label: "Claude Code",
+      installAll: `npx skills add ${REPO} -a claude-code`,
+      installOne: `npx skills add ${REPO} --skill docs-analyze -a claude-code`,
+      installGlobal: `npx skills add ${REPO} -a claude-code -g`,
+      usage: "/docs-analyze",
+      usageHint: "Invoke any skill as a slash command in chat.",
+    },
+    {
+      key: "cursor",
+      label: "Cursor",
+      installAll: `npx skills add ${REPO} -a cursor`,
+      installOne: `npx skills add ${REPO} --skill docs-analyze -a cursor`,
+      installGlobal: `npx skills add ${REPO} -a cursor -g`,
+      usage: "@docs-analyze audit my docs",
+      usageHint: "Mention the skill by name in Cursor chat.",
+    },
+    {
+      key: "codex",
+      label: "Codex CLI",
+      installAll: `npx skills add ${REPO} -a codex`,
+      installOne: `npx skills add ${REPO} --skill docs-analyze -a codex`,
+      installGlobal: `npx skills add ${REPO} -a codex -g`,
+      usage: "Run docs-analyze on the docs/ folder",
+      usageHint: "Reference the skill by name in your Codex prompt.",
+    },
+    {
+      key: "windsurf",
+      label: "Windsurf",
+      installAll: `npx skills add ${REPO} -a windsurf`,
+      installOne: `npx skills add ${REPO} --skill docs-analyze -a windsurf`,
+      installGlobal: `npx skills add ${REPO} -a windsurf -g`,
+      usage: "@docs-analyze my docs",
+      usageHint: "Mention the skill in Windsurf chat.",
+    },
+    {
+      key: "cline",
+      label: "Cline",
+      installAll: `npx skills add ${REPO} -a cline`,
+      installOne: `npx skills add ${REPO} --skill docs-analyze -a cline`,
+      installGlobal: `npx skills add ${REPO} -a cline -g`,
+      usage: "docs-analyze my documentation",
+      usageHint: "Use the skill name in your Cline prompt.",
+    },
+  ]
+
+  let selectedClient = "claude-code"
+
+  function copyText(text, btn) {
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = "Copied!"
+      btn.classList.add("copied")
+      setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied") }, 2000)
+    }).catch(() => {
+      const ta = document.createElement("textarea")
+      ta.value = text; document.body.appendChild(ta); ta.select()
+      document.execCommand("copy"); document.body.removeChild(ta)
+      btn.textContent = "Copied!"
+      btn.classList.add("copied")
+      setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied") }, 2000)
+    })
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  }
+
+  function snippetGroup(label, cmd, id) {
+    return `
+      <div class="snippet-group">
+        <div class="label">${label}</div>
+        <div class="snippet-row">
+          <pre class="snippet-box">${escapeHtml(cmd)}</pre>
+          <button class="copy-btn" data-copy-id="${id}">Copy</button>
+        </div>
+      </div>
+    `
+  }
+
+  function render() {
+    const root = document.getElementById("root")
+    const client = CLIENTS.find(c => c.key === selectedClient) || CLIENTS[0]
+
+    root.innerHTML = `
+      <div class="tabs">
+        ${CLIENTS.map(c => `
+          <button class="client-tab${c.key === selectedClient ? " active" : ""}" data-key="${c.key}">
+            ${c.label}
+          </button>
+        `).join("")}
+      </div>
+      ${snippetGroup("Install all skills", client.installAll, "all")}
+      ${snippetGroup("Install a single skill", client.installOne, "one")}
+      ${snippetGroup("Install globally", client.installGlobal, "global")}
+      <div class="usage-hint">
+        <strong>Usage:</strong> <code>${escapeHtml(client.usage)}</code> — ${escapeHtml(client.usageHint)}
+      </div>
+    `
+
+    root.querySelectorAll(".client-tab").forEach(btn => {
+      btn.addEventListener("click", () => {
+        selectedClient = btn.dataset.key
+        render()
+      })
+    })
+
+    const cmds = { all: client.installAll, one: client.installOne, global: client.installGlobal }
+    root.querySelectorAll("[data-copy-id]").forEach(btn => {
+      btn.addEventListener("click", () => copyText(cmds[btn.dataset.copyId], btn))
+    })
+  }
+
+  window.addEventListener("message", (event) => {
+    const msg = event.data
+    if (!msg || typeof msg.type !== "string") return
+    if (msg.type === "ui/initialize") {
+      render()
+    }
+  })
+
+  window.parent.postMessage({ type: "ui/ready" }, "*")
+  // Also render immediately in case no initialize arrives
+  render()
+</script>
+</body>
+</html>

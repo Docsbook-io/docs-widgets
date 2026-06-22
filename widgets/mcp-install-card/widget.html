@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MCP Install</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: transparent;
+      color: #0f172a;
+      padding: 16px;
+      font-size: 14px;
+    }
+    @media (prefers-color-scheme: dark) {
+      body { color: #e2e8f0; }
+      .client-tab { background: #1e293b; border-color: #334155; color: #e2e8f0; }
+      .client-tab:hover { background: #243447; }
+      .client-tab.active { background: #0f172a; border-color: #6366f1; color: #e2e8f0; }
+      .snippet-box { background: #0f172a; border-color: #334155; color: #e2e8f0; }
+      .copy-btn { background: #1e293b; border-color: #334155; color: #e2e8f0; }
+      .copy-btn:hover { background: #334155; }
+      .step { color: #94a3b8; }
+      .label { color: #94a3b8; }
+    }
+    h2 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    p.desc { color: #64748b; font-size: 13px; margin-bottom: 16px; }
+    .tabs {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px;
+    }
+    .client-tab {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 12px; border: 1px solid #e2e8f0;
+      border-radius: 8px; background: #f8fafc;
+      cursor: pointer; font-size: 13px; font-weight: 500;
+      transition: all 0.15s;
+    }
+    .client-tab:hover { background: #f1f5f9; }
+    .client-tab.active { border-color: #6366f1; background: #faf5ff; color: #4f46e5; }
+    .snippet-area { display: none; }
+    .snippet-area.visible { display: block; }
+    .label { font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 500; }
+    .snippet-row { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 12px; }
+    .snippet-box {
+      flex: 1; background: #f1f5f9; border: 1px solid #e2e8f0;
+      border-radius: 8px; padding: 10px 12px;
+      font-family: ui-monospace, "Cascadia Code", "Fira Code", monospace;
+      font-size: 12px; line-height: 1.6; overflow-x: auto; white-space: pre;
+    }
+    .copy-btn {
+      flex-shrink: 0; padding: 6px 12px; border: 1px solid #e2e8f0;
+      border-radius: 8px; background: #f8fafc; cursor: pointer;
+      font-size: 12px; font-weight: 500; transition: all 0.15s;
+    }
+    .copy-btn:hover { background: #e2e8f0; }
+    .copy-btn.copied { border-color: #22c55e; color: #16a34a; background: #f0fdf4; }
+    .steps { margin-top: 8px; }
+    .step { font-size: 12px; color: #64748b; padding: 2px 0; }
+    .no-url { color: #ef4444; font-size: 13px; padding: 12px; background: #fef2f2; border-radius: 8px; }
+  </style>
+</head>
+<body>
+
+<div id="root">
+  <div class="no-url">Loading…</div>
+</div>
+
+<script>
+  const CLIENTS = [
+    {
+      key: "claude",
+      label: "Claude Code",
+      icon: "C",
+      description: "One command in the terminal. Authorize once in the browser.",
+      snippet: (url) => `claude mcp add --transport http docsbook ${url}`,
+      lang: "bash",
+    },
+    {
+      key: "cursor",
+      label: "Cursor",
+      icon: "◯",
+      description: "Add to ~/.cursor/mcp.json and reload Cursor.",
+      snippet: (url) => JSON.stringify({ mcpServers: { docsbook: { url } } }, null, 2),
+      filename: "~/.cursor/mcp.json",
+      lang: "json",
+      steps: [
+        "Open Settings → MCP & Integrations → New MCP server",
+        "Or paste directly into ~/.cursor/mcp.json",
+      ],
+    },
+    {
+      key: "windsurf",
+      label: "Windsurf",
+      icon: "W",
+      description: "Add to ~/.codeium/windsurf/mcp_config.json.",
+      snippet: (url) => JSON.stringify({ mcpServers: { docsbook: { serverUrl: url } } }, null, 2),
+      filename: "~/.codeium/windsurf/mcp_config.json",
+      lang: "json",
+    },
+    {
+      key: "codex",
+      label: "Codex CLI",
+      icon: "X",
+      description: "Add an HTTP MCP server to your Codex config.",
+      snippet: (url) => JSON.stringify({ mcpServers: [{ name: "docsbook", type: "http", url }] }, null, 2),
+      lang: "json",
+    },
+    {
+      key: "chatgpt",
+      label: "ChatGPT",
+      icon: "G",
+      description: "Add the server URL in Settings → Beta Features → MCP.",
+      snippet: (url) => url,
+      lang: "text",
+      steps: [
+        "Open Settings → Beta Features → MCP",
+        "Click \"Add Server\" and paste the URL",
+      ],
+    },
+  ]
+
+  let selectedClient = "claude"
+  let mcpServerUrl = ""
+
+  function buildSnippet(client) {
+    return client.snippet(mcpServerUrl)
+  }
+
+  function copyText(text, btn) {
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = "Copied!"
+      btn.classList.add("copied")
+      setTimeout(() => {
+        btn.textContent = "Copy"
+        btn.classList.remove("copied")
+      }, 2000)
+    }).catch(() => {
+      // fallback
+      const ta = document.createElement("textarea")
+      ta.value = text
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand("copy")
+      document.body.removeChild(ta)
+      btn.textContent = "Copied!"
+      btn.classList.add("copied")
+      setTimeout(() => {
+        btn.textContent = "Copy"
+        btn.classList.remove("copied")
+      }, 2000)
+    })
+  }
+
+  function render() {
+    const root = document.getElementById("root")
+    if (!mcpServerUrl) {
+      root.innerHTML = '<div class="no-url">MCP server URL not configured for this workspace.</div>'
+      return
+    }
+
+    const client = CLIENTS.find(c => c.key === selectedClient) || CLIENTS[0]
+    const snippet = buildSnippet(client)
+
+    root.innerHTML = `
+      <div class="tabs">
+        ${CLIENTS.map(c => `
+          <button class="client-tab${c.key === selectedClient ? " active" : ""}" data-key="${c.key}">
+            <span style="font-weight:600;font-size:11px;width:16px;text-align:center">${c.icon}</span>
+            ${c.label}
+          </button>
+        `).join("")}
+      </div>
+      <div class="snippet-area visible">
+        <div class="label">${client.filename ? client.filename : client.lang === "bash" ? "Terminal" : "Config"}</div>
+        <div class="snippet-row">
+          <pre class="snippet-box">${escapeHtml(snippet)}</pre>
+          <button class="copy-btn" id="copy-btn">Copy</button>
+        </div>
+        ${client.steps ? `<div class="steps">${client.steps.map(s => `<div class="step">• ${s}</div>`).join("")}</div>` : ""}
+      </div>
+    `
+
+    root.querySelectorAll(".client-tab").forEach(btn => {
+      btn.addEventListener("click", () => {
+        selectedClient = btn.dataset.key
+        render()
+      })
+    })
+
+    const copyBtn = root.querySelector("#copy-btn")
+    if (copyBtn) {
+      copyBtn.addEventListener("click", () => copyText(snippet, copyBtn))
+    }
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+  }
+
+  // MCP Apps postMessage bridge
+  window.addEventListener("message", (event) => {
+    const msg = event.data
+    if (!msg || typeof msg.type !== "string") return
+
+    if (msg.type === "ui/initialize") {
+      const seed = msg.seed || {}
+      if (seed.mcpServerUrl) mcpServerUrl = seed.mcpServerUrl
+      render()
+    }
+  })
+
+  // Signal ready to parent
+  window.parent.postMessage({ type: "ui/ready" }, "*")
+</script>
+</body>
+</html>

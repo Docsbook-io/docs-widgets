@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MCP Raw Config</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: transparent;
+      color: #0f172a;
+      padding: 16px;
+      font-size: 14px;
+    }
+    @media (prefers-color-scheme: dark) {
+      body { color: #e2e8f0; }
+      textarea { background: #0f172a; border-color: #334155; color: #e2e8f0; }
+      textarea:focus { border-color: #6366f1; }
+      .btn-copy { background: #1e293b; border-color: #334155; color: #e2e8f0; }
+      .btn-copy:hover { background: #243447; }
+      .btn-copy.copied { border-color: #22c55e; color: #22c55e; background: #052e16; }
+      .btn-save { background: #6366f1; }
+      .btn-save:hover { background: #4f46e5; }
+      .btn-save:disabled { background: #334155; color: #64748b; }
+      .note { color: #64748b; background: #1e293b; border-color: #334155; }
+      .error { background: #3f1212; border-color: #7f1d1d; color: #fca5a5; }
+    }
+    textarea {
+      width: 100%; min-height: 180px;
+      font-family: ui-monospace, "Cascadia Code", "Fira Code", monospace;
+      font-size: 12px; line-height: 1.6;
+      border: 1px solid #e2e8f0; border-radius: 8px;
+      padding: 12px; resize: vertical; outline: none;
+      transition: border-color 0.15s;
+      background: #f8fafc; color: #0f172a;
+    }
+    textarea:focus { border-color: #6366f1; }
+    .note {
+      font-size: 12px; color: #64748b; background: #f1f5f9;
+      border: 1px solid #e2e8f0; border-radius: 6px;
+      padding: 8px 10px; margin-bottom: 12px; line-height: 1.5;
+    }
+    .error {
+      font-size: 12px; color: #b91c1c; background: #fef2f2;
+      border: 1px solid #fecaca; border-radius: 6px;
+      padding: 8px 10px; margin-top: 8px; display: none;
+    }
+    .footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+    .btn-copy {
+      padding: 7px 16px; border: 1px solid #e2e8f0;
+      border-radius: 8px; background: #f8fafc; cursor: pointer;
+      font-size: 13px; font-weight: 500; transition: all 0.15s;
+    }
+    .btn-copy:hover { background: #f1f5f9; }
+    .btn-copy.copied { border-color: #22c55e; color: #16a34a; background: #f0fdf4; }
+    .btn-save {
+      padding: 7px 20px; background: #6366f1; color: #fff;
+      border: none; border-radius: 8px; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .btn-save:hover { background: #4f46e5; }
+    .btn-save:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script>
+  const REDACTED = "***"
+  let seedJson = ""
+  let originalSeed = {}
+
+  function render(seedObj) {
+    const root = document.getElementById("root")
+    // Build display JSON — token placeholder already redacted by host
+    const displayJson = JSON.stringify(seedObj, null, 2)
+    seedJson = displayJson
+    originalSeed = seedObj
+
+    root.innerHTML = `
+      <div class="note">
+        Sensitive fields are shown as <strong>***</strong>. Leaving them unchanged will not overwrite the stored value.
+      </div>
+      <textarea id="json-editor" spellcheck="false">${escapeHtml(displayJson)}</textarea>
+      <div class="error" id="error-msg"></div>
+      <div class="footer">
+        <button class="btn-copy" id="btn-copy">Copy</button>
+        <button class="btn-save" id="btn-save" disabled>Save</button>
+      </div>
+    `
+
+    const editor = root.querySelector("#json-editor")
+    const saveBtn = root.querySelector("#btn-save")
+    const errorEl = root.querySelector("#error-msg")
+
+    editor.addEventListener("input", () => {
+      errorEl.style.display = "none"
+      saveBtn.disabled = editor.value.trim() === seedJson.trim()
+    })
+
+    root.querySelector("#btn-copy").addEventListener("click", function() {
+      const btn = this
+      navigator.clipboard.writeText(editor.value).then(() => {
+        btn.textContent = "Copied!"
+        btn.classList.add("copied")
+        setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied") }, 2000)
+      }).catch(() => {
+        const ta = document.createElement("textarea")
+        ta.value = editor.value
+        document.body.appendChild(ta)
+        ta.select()
+        document.execCommand("copy")
+        document.body.removeChild(ta)
+        btn.textContent = "Copied!"
+        btn.classList.add("copied")
+        setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied") }, 2000)
+      })
+    })
+
+    root.querySelector("#btn-save").addEventListener("click", () => {
+      let parsed
+      try {
+        parsed = JSON.parse(editor.value)
+      } catch (e) {
+        errorEl.textContent = "Invalid JSON: " + e.message
+        errorEl.style.display = "block"
+        return
+      }
+
+      // Build patch: only include fields that changed from original seed.
+      // If a field's new value is "***", it means it was not changed — skip it.
+      const patch = {}
+      for (const [key, val] of Object.entries(parsed)) {
+        // Skip if value is the REDACTED sentinel (user didn't change it)
+        if (val === REDACTED) continue
+        // Skip if value matches original seed exactly (no change)
+        if (JSON.stringify(val) === JSON.stringify(originalSeed[key])) continue
+        patch[key] = val
+      }
+
+      if (Object.keys(patch).length === 0) {
+        errorEl.textContent = "No changes to save (redacted fields are excluded)."
+        errorEl.style.display = "block"
+        return
+      }
+
+      window.parent.postMessage({ type: "ui/patch", patch }, "*")
+      // Update saved state
+      seedJson = editor.value.trim()
+      originalSeed = { ...originalSeed, ...patch }
+      saveBtn.disabled = true
+      errorEl.style.display = "none"
+    })
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  }
+
+  window.addEventListener("message", (event) => {
+    const msg = event.data
+    if (!msg || typeof msg.type !== "string") return
+    if (msg.type === "ui/initialize") {
+      const seed = msg.seed || {}
+      // Build the config object from seed; url from mcpServerUrl, token already redacted
+      const configObj = {
+        mcpServers: {
+          docsbook: {
+            url: seed.mcpServerUrl || "",
+            headers: {
+              Authorization: `Bearer ${seed.mcpToken || REDACTED}`,
+            },
+          },
+        },
+      }
+      // Flatten for editor: store the object we show
+      render(configObj)
+    }
+  })
+
+  window.parent.postMessage({ type: "ui/ready" }, "*")
+</script>
+</body>
+</html>
